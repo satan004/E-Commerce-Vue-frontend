@@ -55,13 +55,17 @@ export const brands: Brand[] = [
 ];
 
 export const navCategories = [
-  'All Phones',
-  'Best Sellers',
-  'New Launches',
-  '5G Phones',
-  'Budget Phones',
-  'Premium Phones',
-  'Smartphones',
+  'All',
+  'Samsung',
+  'iPhone',
+  'Oppo',
+  'Realme',
+  'Vivo',
+  'Xiaomi',
+  'OnePlus',
+  'Motorola',
+  'Nokia',
+  'Honor',
 ];
 
 export const topCategories: Category[] = [

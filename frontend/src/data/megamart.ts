@@ -55,14 +55,13 @@ export const brands: Brand[] = [
 ];
 
 export const navCategories = [
-  'Groceries',
-  'Premium Fruits',
-  'Home & Kitchen',
-  'Fashion',
-  'Electronics',
-  'Beauty',
-  'Home Improvement',
-  'Sports, Toys & Luggage',
+  'All Phones',
+  'Best Sellers',
+  'New Launches',
+  '5G Phones',
+  'Budget Phones',
+  'Premium Phones',
+  'Smartphones',
 ];
 
 export const topCategories: Category[] = [
@@ -142,42 +141,42 @@ export function searchProducts(query: string): Product[] {
   );
 }
 
-// Daily Essentials Categories
-export const dailyEssentials = [
+// Popular Phones Categories
+export const popularPhones = [
   {
-    id: 'de1',
-    name: 'Daily Essentials',
-    image: IMG('photo-1609501676725-7186f017a4b0'),
-    discount: 85,
+    id: 'pp1',
+    name: 'iPhone 15 Pro',
+    image: IMG('photo-1696446702233-9e6e9c7b5f4a'),
+    discount: 11,
   },
   {
-    id: 'de2',
-    name: 'Vegetables',
-    image: IMG('photo-1597609286332-1f3e7e0a2e1e'),
-    discount: 85,
+    id: 'pp2',
+    name: 'Samsung S22 Ultra',
+    image: IMG('photo-1610792516775-01de03eae630'),
+    discount: 56,
   },
   {
-    id: 'de3',
-    name: 'Fresh Fruits',
-    image: IMG('photo-1599599810694-200e7e45522e'),
-    discount: 85,
+    id: 'pp3',
+    name: 'OnePlus 12',
+    image: IMG('photo-1610792516775-01de03eae630'),
+    discount: 18,
   },
   {
-    id: 'de4',
-    name: 'Strawberry',
-    image: IMG('photo-1609593765562-0cd1b8e98bb3'),
-    discount: 85,
+    id: 'pp4',
+    name: 'Xiaomi 13 Pro',
+    image: IMG('photo-1607936854279-55e8a4c64888'),
+    discount: 25,
   },
   {
-    id: 'de5',
-    name: 'Mango',
-    image: IMG('photo-1585518419310-16e7a6c57d5c'),
-    discount: 85,
+    id: 'pp5',
+    name: 'Realme 12 Pro',
+    image: IMG('photo-1598327105666-5b89351aff97'),
+    discount: 24,
   },
   {
-    id: 'de6',
-    name: 'Cherries',
-    image: IMG('photo-1599599810694-200e7e45522e'),
-    discount: 85,
+    id: 'pp6',
+    name: 'Vivo V29',
+    image: IMG('photo-1574944985070-8f3ebc6b79d2'),
+    discount: 17,
   },
 ];

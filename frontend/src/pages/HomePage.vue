@@ -5,7 +5,7 @@ import CategoryCardWidget from '@/widgets/category-card/CategoryCardWidget.vue';
 import ProductCardWidget from '@/widgets/product-card/ProductCardWidget.vue';
 import BrandCardWidget from '@/widgets/brand-card/BrandCardWidget.vue';
 import SectionHeaderWidget from '@/widgets/section-header/SectionHeaderWidget.vue';
-import { products, topCategories, brands, dailyEssentials } from '@/data/megamart';
+import { products, topCategories, brands, popularPhones } from '@/data/megamart';
 
 // Get featured smartphones for the hero products section
 const featuredProducts = computed(() => products.slice(0, 5));
@@ -16,8 +16,8 @@ const brandList = computed(() => brands);
 // Get top categories
 const categoryList = computed(() => topCategories);
 
-// Get daily essentials
-const essentialsList = computed(() => dailyEssentials);
+// Get popular phones
+const popularPhonesList = computed(() => popularPhones);
 </script>
 
 <template>
@@ -55,12 +55,12 @@ const essentialsList = computed(() => dailyEssentials);
       </div>
     </section>
 
-    <!-- Daily Essentials Section -->
+    <!-- Popular Phones Section -->
     <section class="mm-section">
       <div class="container">
-        <SectionHeaderWidget prefix="Daily" accent="Essentials" :viewAll="true" />
+        <SectionHeaderWidget prefix="Popular" accent="Phones" :viewAll="true" />
         <div class="mm-essentials-grid">
-          <div v-for="item in essentialsList" :key="item.id" class="mm-essential-card">
+          <div v-for="item in popularPhonesList" :key="item.id" class="mm-essential-card">
             <div class="mm-essential-image">
               <img :src="item.image" :alt="item.name" />
               <div class="mm-essential-discount">UP to {{ item.discount }}% OFF</div>

@@ -1,0 +1,118 @@
+/* ===== MegaMart Design Tokens ===== */
+:root {
+  /* Brand */
+  --mm-primary: #2bbef9;
+  --mm-primary-dark: #1aa7e6;
+  --mm-primary-light: #e8f7fd;
+
+  /* Surface */
+  --mm-bg: #ffffff;
+  --mm-bg-soft: #ffffff;
+  --mm-bg-page: #f4f6f9;
+  --mm-bg-mute: #eef2f7;
+  --mm-card: #ffffff;
+  --mm-border: #e6ebf2;
+  --mm-border-hover: #cfd8e3;
+
+  /* Text */
+  --mm-text: #1f2937;
+  --mm-text-soft: #5b6472;
+  --mm-text-mute: #8a93a3;
+
+  /* Banner dark navy */
+  --mm-banner-bg: #19294a;
+  --mm-banner-bg-2: #1f3261;
+
+  /* Sale / status */
+  --mm-sale: #21c178;
+  --mm-discount: #2bbef9;
+  --mm-warn: #ff9f43;
+
+  /* Radii / shadow */
+  --mm-radius-sm: 6px;
+  --mm-radius: 12px;
+  --mm-radius-lg: 18px;
+  --mm-shadow-sm: 0 1px 2px rgba(20, 30, 60, 0.06);
+  --mm-shadow: 0 6px 18px rgba(20, 30, 60, 0.08);
+  --mm-shadow-lg: 0 14px 34px rgba(20, 30, 60, 0.14);
+
+  /* Layout */
+  --mm-container: 1240px;
+
+  /* Typography */
+  --mm-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Helvetica Neue', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--mm-bg-page);
+  color: var(--mm-text);
+  font-family: var(--mm-font);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--mm-primary);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  margin: 0;
+  color: var(--mm-text);
+  font-weight: 600;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--mm-container);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.section {
+  padding: 28px 0;
+}

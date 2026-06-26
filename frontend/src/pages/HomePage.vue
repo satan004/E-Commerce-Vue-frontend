@@ -5,7 +5,7 @@ import CategoryCardWidget from '@/widgets/category-card/CategoryCardWidget.vue';
 import ProductCardWidget from '@/widgets/product-card/ProductCardWidget.vue';
 import BrandCardWidget from '@/widgets/brand-card/BrandCardWidget.vue';
 import SectionHeaderWidget from '@/widgets/section-header/SectionHeaderWidget.vue';
-import { products, topCategories, brands } from '@/data/megamart';
+import { products, topCategories, brands, dailyEssentials } from '@/data/megamart';
 
 // Get featured smartphones for the hero products section
 const featuredProducts = computed(() => products.slice(0, 5));
@@ -15,6 +15,9 @@ const brandList = computed(() => brands);
 
 // Get top categories
 const categoryList = computed(() => topCategories);
+
+// Get daily essentials
+const essentialsList = computed(() => dailyEssentials);
 </script>
 
 <template>
@@ -51,6 +54,22 @@ const categoryList = computed(() => topCategories);
         </div>
       </div>
     </section>
+
+    <!-- Daily Essentials Section -->
+    <section class="mm-section">
+      <div class="container">
+        <SectionHeaderWidget prefix="Daily" accent="Essentials" :viewAll="true" />
+        <div class="mm-essentials-grid">
+          <div v-for="item in essentialsList" :key="item.id" class="mm-essential-card">
+            <div class="mm-essential-image">
+              <img :src="item.image" :alt="item.name" />
+              <div class="mm-essential-discount">UP to {{ item.discount }}% OFF</div>
+            </div>
+            <div class="mm-essential-name">{{ item.name }}</div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -82,6 +101,61 @@ const categoryList = computed(() => topCategories);
   gap: 16px;
 }
 
+.mm-essentials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.mm-essential-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.08);
+}
+
+.mm-essential-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 18px rgba(20, 30, 60, 0.12);
+}
+
+.mm-essential-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #f4f6f9;
+}
+
+.mm-essential-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mm-essential-discount {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  background: rgba(43, 190, 249, 0.95);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  text-align: center;
+}
+
+.mm-essential-name {
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mm-text);
+}
+
 @media (max-width: 1024px) {
   .mm-products-grid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -93,6 +167,10 @@ const categoryList = computed(() => topCategories);
 
   .mm-brands-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mm-essentials-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   }
 }
 
@@ -113,6 +191,11 @@ const categoryList = computed(() => topCategories);
 
   .mm-brands-grid {
     grid-template-columns: 1fr;
+  }
+
+  .mm-essentials-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
   }
 }
 </style>

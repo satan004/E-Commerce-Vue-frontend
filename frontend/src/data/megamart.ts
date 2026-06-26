@@ -141,3 +141,43 @@ export function searchProducts(query: string): Product[] {
       p.category.toLowerCase().includes(q),
   );
 }
+
+// Daily Essentials Categories
+export const dailyEssentials = [
+  {
+    id: 'de1',
+    name: 'Daily Essentials',
+    image: IMG('photo-1609501676725-7186f017a4b0'),
+    discount: 85,
+  },
+  {
+    id: 'de2',
+    name: 'Vegetables',
+    image: IMG('photo-1597609286332-1f3e7e0a2e1e'),
+    discount: 85,
+  },
+  {
+    id: 'de3',
+    name: 'Fresh Fruits',
+    image: IMG('photo-1599599810694-200e7e45522e'),
+    discount: 85,
+  },
+  {
+    id: 'de4',
+    name: 'Strawberry',
+    image: IMG('photo-1609593765562-0cd1b8e98bb3'),
+    discount: 85,
+  },
+  {
+    id: 'de5',
+    name: 'Mango',
+    image: IMG('photo-1585518419310-16e7a6c57d5c'),
+    discount: 85,
+  },
+  {
+    id: 'de6',
+    name: 'Cherries',
+    image: IMG('photo-1599599810694-200e7e45522e'),
+    discount: 85,
+  },
+];

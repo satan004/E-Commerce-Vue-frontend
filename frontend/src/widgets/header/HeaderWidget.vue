@@ -1,13 +1,27 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useCartStore } from '@/store/modules/cart';
+import { useWishlistStore } from '@/store/modules/wishlist';
+import { useAuthStore } from '@/store/modules/auth';
+
+const router = useRouter();
+const cart = useCartStore();
+const wishlist = useWishlistStore();
+const auth = useAuthStore();
 
 const searchQuery = ref('');
+
+function submitSearch() {
+  const q = searchQuery.value.trim();
+  router.push({ path: '/products', query: q ? { q } : {} });
+}
 </script>
 
 <template>
   <header class="mm-header">
     <div class="container mm-header-inner">
-      <a href="/" class="mm-logo">
+      <RouterLink to="/" class="mm-logo">
         <span class="mm-logo-icon" aria-hidden="true">
           <svg width="22" height="18" viewBox="0 0 22 18" fill="none">
             <rect y="2" width="22" height="3" rx="1.5" fill="#2bbef9" />
@@ -16,9 +30,9 @@ const searchQuery = ref('');
           </svg>
         </span>
         <span class="mm-logo-text">MegaMart</span>
-      </a>
+      </RouterLink>
 
-      <div class="mm-search">
+      <form class="mm-search" @submit.prevent="submitSearch">
         <span class="mm-search-icon" aria-hidden="true">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a93a3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="7" />
@@ -30,35 +44,50 @@ const searchQuery = ref('');
           type="text"
           placeholder="Search essentials, groceries and more..."
         />
-        <button class="mm-search-btn" aria-label="Open categories">
+        <button type="button" class="mm-search-btn" aria-label="Open categories">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5b6472" stroke-width="2" stroke-linecap="round">
             <line x1="4" y1="7" x2="20" y2="7" />
             <line x1="4" y1="12" x2="20" y2="12" />
             <line x1="4" y1="17" x2="20" y2="17" />
           </svg>
         </button>
-      </div>
+      </form>
 
       <div class="mm-actions">
-        <a href="/account" class="mm-action">
+        <RouterLink
+          :to="auth.isAuthenticated ? '/profile' : '/login'"
+          class="mm-action mm-action-link"
+        >
           <span class="mm-action-icon" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1f2937" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
           </span>
-          <span class="mm-action-text">Sign Up/Sign In</span>
-        </a>
-        <a href="/cart" class="mm-action">
-          <span class="mm-action-icon" aria-hidden="true">
+          <span class="mm-action-text">{{ auth.isAuthenticated ? auth.user?.fullName : 'Sign Up/Sign In' }}</span>
+        </RouterLink>
+
+        <RouterLink to="/wishlist" class="mm-action">
+          <span class="mm-action-icon mm-action-icon-stack" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1f2937" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+            <span v-if="wishlist.count" class="mm-badge">{{ wishlist.count }}</span>
+          </span>
+          <span class="mm-action-text">Wishlist</span>
+        </RouterLink>
+
+        <RouterLink to="/cart" class="mm-action">
+          <span class="mm-action-icon mm-action-icon-stack" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1f2937" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="9" cy="21" r="1" />
               <circle cx="20" cy="21" r="1" />
               <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6" />
             </svg>
+            <span v-if="cart.itemCount" class="mm-badge">{{ cart.itemCount }}</span>
           </span>
           <span class="mm-action-text">Cart</span>
-        </a>
+        </RouterLink>
       </div>
     </div>
   </header>
@@ -87,17 +116,8 @@ const searchQuery = ref('');
   color: var(--mm-text);
   flex-shrink: 0;
 }
-
-.mm-logo-icon {
-  display: inline-flex;
-}
-
-.mm-logo-text {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
-  color: #19294a;
-}
+.mm-logo-icon { display: inline-flex; }
+.mm-logo-text { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; color: #19294a; }
 
 .mm-search {
   flex: 1;
@@ -112,16 +132,8 @@ const searchQuery = ref('');
   transition: border-color 0.2s, background 0.2s;
   max-width: 640px;
 }
-
-.mm-search:focus-within {
-  border-color: var(--mm-primary);
-  background: #fff;
-}
-
-.mm-search-icon {
-  display: inline-flex;
-}
-
+.mm-search:focus-within { border-color: var(--mm-primary); background: #fff; }
+.mm-search-icon { display: inline-flex; }
 .mm-search input {
   flex: 1;
   border: none;
@@ -130,10 +142,7 @@ const searchQuery = ref('');
   color: var(--mm-text);
   font-size: 14px;
 }
-
-.mm-search input::placeholder {
-  color: var(--mm-text-mute);
-}
+.mm-search input::placeholder { color: var(--mm-text-mute); }
 
 .mm-search-btn {
   display: inline-flex;
@@ -157,22 +166,40 @@ const searchQuery = ref('');
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
+  background: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+.mm-action:hover { color: var(--mm-primary); }
+.mm-action-link {
+  text-decoration: none;
+}
+.mm-action-icon { display: inline-flex; position: relative; }
+
+.mm-action-icon-stack {
+  position: relative;
 }
 
-.mm-action:hover {
-  color: var(--mm-primary);
-}
-
-.mm-action-icon {
+.mm-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: var(--mm-primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 @media (max-width: 768px) {
-  .mm-action-text {
-    display: none;
-  }
-  .mm-search {
-    max-width: none;
-  }
+  .mm-action-text { display: none; }
+  .mm-search { max-width: none; }
 }
 </style>

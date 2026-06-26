@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RouterView } from 'vue-router';
 import HeaderWidget from '@/widgets/header/HeaderWidget.vue';
 import CategoryBarWidget from '@/widgets/category-bar/CategoryBarWidget.vue';
 import FooterWidget from '@/widgets/footer/FooterWidget.vue';
@@ -9,7 +10,7 @@ import FooterWidget from '@/widgets/footer/FooterWidget.vue';
     <HeaderWidget />
     <CategoryBarWidget />
     <main class="page-main">
-      <slot />
+      <RouterView />
     </main>
     <FooterWidget />
   </div>

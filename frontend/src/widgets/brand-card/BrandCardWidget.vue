@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Brand } from '@/data/megamart';
+import type { Brand } from '@/data/types';
 
 defineProps<{ brand: Brand }>();
 </script>

@@ -55,14 +55,17 @@ export const brands: Brand[] = [
 ];
 
 export const navCategories = [
-  'Groceries',
-  'Premium Fruits',
-  'Home & Kitchen',
-  'Fashion',
-  'Electronics',
-  'Beauty',
-  'Home Improvement',
-  'Sports, Toys & Luggage',
+  'All',
+  'Samsung',
+  'iPhone',
+  'Oppo',
+  'Realme',
+  'Vivo',
+  'Xiaomi',
+  'OnePlus',
+  'Motorola',
+  'Nokia',
+  'Honor',
 ];
 
 export const topCategories: Category[] = [
@@ -141,3 +144,43 @@ export function searchProducts(query: string): Product[] {
       p.category.toLowerCase().includes(q),
   );
 }
+
+// Popular Phones Categories
+export const popularPhones = [
+  {
+    id: 'pp1',
+    name: 'iPhone 15 Pro',
+    image: IMG('photo-1696446702233-9e6e9c7b5f4a'),
+    discount: 11,
+  },
+  {
+    id: 'pp2',
+    name: 'Samsung S22 Ultra',
+    image: IMG('photo-1610792516775-01de03eae630'),
+    discount: 56,
+  },
+  {
+    id: 'pp3',
+    name: 'OnePlus 12',
+    image: IMG('photo-1610792516775-01de03eae630'),
+    discount: 18,
+  },
+  {
+    id: 'pp4',
+    name: 'Xiaomi 13 Pro',
+    image: IMG('photo-1607936854279-55e8a4c64888'),
+    discount: 25,
+  },
+  {
+    id: 'pp5',
+    name: 'Realme 12 Pro',
+    image: IMG('photo-1598327105666-5b89351aff97'),
+    discount: 24,
+  },
+  {
+    id: 'pp6',
+    name: 'Vivo V29',
+    image: IMG('photo-1574944985070-8f3ebc6b79d2'),
+    discount: 17,
+  },
+];

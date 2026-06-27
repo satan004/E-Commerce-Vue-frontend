@@ -1,56 +1,201 @@
 <script setup lang="ts">
-// Plain diagnostic build — no widgets, no stores, no router-link.
-// If THIS doesn't render, the issue is somewhere in main.ts / router / layout.
+import { computed } from 'vue';
+import HeroBannerWidget from '@/widgets/hero-banner/HeroBannerWidget.vue';
+import CategoryCardWidget from '@/widgets/category-card/CategoryCardWidget.vue';
+import ProductCardWidget from '@/widgets/product-card/ProductCardWidget.vue';
+import BrandCardWidget from '@/widgets/brand-card/BrandCardWidget.vue';
+import SectionHeaderWidget from '@/widgets/section-header/SectionHeaderWidget.vue';
+import { products, topCategories, brands, popularPhones } from '@/data/megamart';
+
+// Get featured smartphones for the hero products section
+const featuredProducts = computed(() => products.slice(0, 5));
+
+// Get brands to display
+const brandList = computed(() => brands);
+
+// Get top categories
+const categoryList = computed(() => topCategories);
+
+// Get popular phones
+const popularPhonesList = computed(() => popularPhones);
 </script>
 
 <template>
-  <div class="container" style="padding: 40px 20px;">
-    <h1 style="color: #2bbef9; font-size: 32px; margin-bottom: 16px;">
-      Home Page Works!
-    </h1>
-    <p style="color: #1f2937; font-size: 16px; margin-bottom: 24px;">
-      If you see this message, the routing and layout are working.
-    </p>
+  <div class="page">
+    <!-- Hero Carousel Banner -->
+    <HeroBannerWidget />
 
-    <div
-      style="background: #fff; border: 1px solid #e6ebf2; border-radius: 12px; padding: 24px; margin-bottom: 16px;"
-    >
-      <h2 style="color: #1f2937; font-size: 22px; margin-bottom: 12px;">
-        Grab the best deal on Smartphones
-      </h2>
-      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
-        <div
-          v-for="i in 5"
-          :key="i"
-          style="background: #f7f9fc; border-radius: 8px; padding: 20px; text-align: center; color: #5b6472;"
-        >
-          Phone {{ i }}
+    <!-- Featured Products Section -->
+    <section class="mm-section">
+      <div class="container">
+        <SectionHeaderWidget prefix="Grab the best deal on" accent="Smartphones" :viewAll="true" />
+        <div class="mm-products-grid">
+          <ProductCardWidget v-for="product in featuredProducts" :key="product.id" :product="product" />
         </div>
       </div>
-    </div>
+    </section>
 
-    <div
-      style="background: #fff; border: 1px solid #e6ebf2; border-radius: 12px; padding: 24px;"
-    >
-      <h2 style="color: #1f2937; font-size: 22px; margin-bottom: 12px;">
-        Shop From Top Categories
-      </h2>
-      <div style="display: grid; grid-template-columns: repeat(10, 1fr); gap: 12px;">
-        <div
-          v-for="i in 10"
-          :key="i"
-          style="display: flex; flex-direction: column; align-items: center; gap: 8px;"
-        >
-          <div
-            style="width: 80px; height: 80px; border-radius: 50%; background: #e8f7fd; display: flex; align-items: center; justify-content: center; color: #1428a0; font-weight: 700;"
-          >
-            {{ i }}
+    <!-- Top Categories Section -->
+    <section class="mm-section">
+      <div class="container">
+        <SectionHeaderWidget prefix="Shop From" accent="Top Categories" :viewAll="true" />
+        <div class="mm-categories-grid">
+          <CategoryCardWidget v-for="category in categoryList" :key="category.id" :category="category" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Brand Promotions Section -->
+    <section class="mm-section">
+      <div class="container">
+        <SectionHeaderWidget prefix="Top" accent="Electronics Brands" :viewAll="true" />
+        <div class="mm-brands-grid">
+          <BrandCardWidget v-for="brand in brandList" :key="brand.id" :brand="brand" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Popular Phones Section -->
+    <section class="mm-section">
+      <div class="container">
+        <SectionHeaderWidget prefix="Popular" accent="Phones" :viewAll="true" />
+        <div class="mm-essentials-grid">
+          <div v-for="item in popularPhonesList" :key="item.id" class="mm-essential-card">
+            <div class="mm-essential-image">
+              <img :src="item.image" :alt="item.name" />
+              <div class="mm-essential-discount">UP to {{ item.discount }}% OFF</div>
+            </div>
+            <div class="mm-essential-name">{{ item.name }}</div>
           </div>
-          <span style="font-size: 13px; color: #1f2937;">Brand {{ i }}</span>
         </div>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.page {
+  width: 100%;
+  background: var(--mm-bg-page);
+}
+
+.mm-section {
+  padding: 28px 0;
+}
+
+.mm-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.mm-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.mm-brands-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.mm-essentials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.mm-essential-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.08);
+}
+
+.mm-essential-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 18px rgba(20, 30, 60, 0.12);
+}
+
+.mm-essential-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #f4f6f9;
+}
+
+.mm-essential-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mm-essential-discount {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  background: rgba(43, 190, 249, 0.95);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  text-align: center;
+}
+
+.mm-essential-name {
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mm-text);
+}
+
+@media (max-width: 1024px) {
+  .mm-products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+
+  .mm-categories-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .mm-brands-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mm-essentials-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .mm-section {
+    padding: 20px 0;
+  }
+
+  .mm-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .mm-categories-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .mm-brands-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mm-essentials-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+</style>

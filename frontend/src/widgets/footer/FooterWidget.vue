@@ -67,8 +67,8 @@ const year = new Date().getFullYear();
 
 <style scoped>
 .mm-footer {
-  background: #fff;
-  border-top: 1px solid var(--mm-border);
+  background: linear-gradient(135deg, #0084c6 0%, #2ba8d9 100%);
+  color: #fff;
   padding: 48px 0 18px;
   margin-top: 40px;
 }
@@ -93,18 +93,18 @@ const year = new Date().getFullYear();
 .mm-logo-text {
   font-size: 20px;
   font-weight: 700;
-  color: #19294a;
+  color: #fff;
 }
 
 .mm-footer h4 {
   font-size: 14px;
   font-weight: 700;
   margin-bottom: 14px;
-  color: var(--mm-text);
+  color: #fff;
 }
 
 .mm-footer p {
-  color: var(--mm-text-soft);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 13px;
   margin: 0 0 12px;
   max-width: 280px;
@@ -116,11 +116,11 @@ const year = new Date().getFullYear();
 
 .mm-footer ul a {
   font-size: 13px;
-  color: var(--mm-text-soft);
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .mm-footer ul a:hover {
-  color: var(--mm-primary);
+  color: #fff;
 }
 
 .mm-socials {
@@ -132,16 +132,16 @@ const year = new Date().getFullYear();
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: var(--mm-bg-mute);
+  background: rgba(255, 255, 255, 0.15);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--mm-text-soft);
+  color: rgba(255, 255, 255, 0.75);
   transition: background 0.2s, color 0.2s;
 }
 
 .mm-socials a:hover {
-  background: var(--mm-primary);
+  background: rgba(255, 255, 255, 0.25);
   color: #fff;
 }
 
@@ -153,22 +153,27 @@ const year = new Date().getFullYear();
 
 .mm-newsletter input {
   flex: 1;
-  border: 1px solid var(--mm-border);
-  background: var(--mm-bg-mute);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 9px 12px;
   font-size: 13px;
+  color: #fff;
+}
+
+.mm-newsletter input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .mm-newsletter input:focus {
   outline: none;
-  border-color: var(--mm-primary);
-  background: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .mm-newsletter button {
-  background: var(--mm-primary);
-  color: #fff;
+  background: #fff;
+  color: #0084c6;
   border-radius: 8px;
   padding: 9px 16px;
   font-size: 13px;
@@ -176,25 +181,25 @@ const year = new Date().getFullYear();
 }
 
 .mm-newsletter button:hover {
-  background: var(--mm-primary-dark);
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .mm-footer-bottom {
   margin-top: 36px;
   padding-top: 18px;
-  border-top: 1px solid var(--mm-border);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: var(--mm-text-mute);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .mm-footer-bottom a {
-  color: var(--mm-text-mute);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .mm-footer-bottom a:hover {
-  color: var(--mm-primary);
+  color: #fff;
 }
 
 @media (max-width: 768px) {

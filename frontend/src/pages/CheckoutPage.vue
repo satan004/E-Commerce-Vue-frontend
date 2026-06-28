@@ -42,41 +42,46 @@ async function placeOrder() {
   error.value = '';
   placing.value = true;
 
-  const newOrder = orders.placeOrder({
-    items: items.value.map((it) => ({
-      productId: it.productId,
-      name: it.product.name,
-      image: it.product.image,
-      price: it.product.price,
-      qty: it.qty,
-    })),
-    subtotal: cart.subtotal,
-    shipping: cart.shipping,
-    total: cart.total,
-    address: {
-      fullName: form.fullName,
+  try {
+    const newOrder = await orders.placeOrder({
+      items: items.value.map((it) => ({
+        productId: it.productId,
+        name: it.product.name,
+        image: it.product.image,
+        price: it.product.price,
+        qty: it.qty,
+      })),
+      subtotal: cart.subtotal,
+      shipping: cart.shipping,
+      total: cart.total,
+      address: {
+        fullName: form.fullName,
+        phone: form.phone,
+        line1: form.line1,
+        city: form.city,
+        state: form.state,
+        pincode: form.pincode,
+      },
+      payment: form.payment,
+    });
+
+    await auth.updateProfile({
       phone: form.phone,
-      line1: form.line1,
-      city: form.city,
-      state: form.state,
-      pincode: form.pincode,
-    },
-    payment: form.payment,
-  });
+      address: {
+        line1: form.line1,
+        city: form.city,
+        state: form.state,
+        pincode: form.pincode,
+      },
+    });
 
-  auth.updateProfile({
-    phone: form.phone,
-    address: {
-      line1: form.line1,
-      city: form.city,
-      state: form.state,
-      pincode: form.pincode,
-    },
-  });
-
-  cart.clear();
-  placing.value = false;
-  router.push(`/orders?just=${newOrder.id}`);
+    cart.clear();
+    router.push(`/orders?just=${newOrder.id}`);
+  } catch (e: any) {
+    error.value = e?.message ?? 'Unable to place order.';
+  } finally {
+    placing.value = false;
+  }
 }
 </script>
 

@@ -16,12 +16,12 @@ const form = reactive({
 const error = ref('');
 const submitting = ref(false);
 
-function submit() {
+async function submit() {
   if (submitting.value) return;
   error.value = '';
   submitting.value = true;
   try {
-    const result = auth.register({
+    const result = await auth.register({
       fullName: form.fullName.trim(),
       email: form.email.trim(),
       phone: form.phone.trim() || undefined,
@@ -35,6 +35,7 @@ function submit() {
     router.push('/');
   } catch (e) {
     error.value = (e as Error).message || 'Unexpected error.';
+  } finally {
     submitting.value = false;
   }
 }

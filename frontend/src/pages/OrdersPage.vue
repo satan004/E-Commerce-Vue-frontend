@@ -12,6 +12,7 @@ const expanded = ref<string | null>(null);
 const justPlacedId = computed(() => (route.query.just as string) || '');
 
 onMounted(() => {
+  orders.loadOrders();
   if (justPlacedId.value) expanded.value = justPlacedId.value;
 });
 

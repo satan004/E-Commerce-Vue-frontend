@@ -1,16 +1,24 @@
 <script setup lang="ts">
 import type { Product } from '@/data/types';
 import { useWishlistStore } from '@/store/modules/wishlist';
+import { useAuthStore } from '@/store/modules/auth';
+import { useRouter } from 'vue-router';
 
 const props = defineProps<{ product: Product }>();
 
 const wishlist = useWishlistStore();
+const auth = useAuthStore();
+const router = useRouter();
 const isFav = () => wishlist.has(props.product.id);
 
-function toggleFav(e: Event) {
+async function toggleFav(e: Event) {
   e.preventDefault();
   e.stopPropagation();
-  wishlist.toggle(props.product.id);
+  if (!auth.isAuthenticated) {
+    await router.push({ path: '/login', query: { redirect: `/product/${props.product.slug}` } });
+    return;
+  }
+  await wishlist.toggle(props.product.id);
 }
 </script>
 

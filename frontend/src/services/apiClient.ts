@@ -1,18 +1,18 @@
 // filepath: src/services/apiClient.ts
-import axios, { type AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios';
 
 // In dev, Vite proxies `/api/*` to the Laravel backend (see vite.config.ts).
 // In production, set VITE_API_BASE_URL to the absolute URL of your API.
 const baseURL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api';
 
-export const apiClient: AxiosInstance = axios.create({
-  baseURL,
-  headers: {
-    Accept: 'application/json',
-    'X-Requested-With': 'XMLHttpRequest',
-  },
-  withCredentials: false,
-});
+type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+export interface ApiRequestConfig {
+  method?: ApiMethod;
+  url: string;
+  params?: object;
+  data?: unknown;
+  headers?: Record<string, string>;
+}
 
 // --- Token storage -----------------------------------------------------------
 const TOKEN_KEY = 'mm-auth-token';
@@ -31,16 +31,6 @@ export function getAuthToken(): string | null {
   return window.localStorage.getItem(TOKEN_KEY);
 }
 
-// --- Request interceptor: inject bearer token --------------------------------
-apiClient.interceptors.request.use((config) => {
-  const token = getAuthToken();
-  if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
 // --- Response interceptor: normalize errors ----------------------------------
 export interface ApiError {
   status: number;
@@ -48,29 +38,54 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 
-function toApiError(err: unknown): ApiError {
-  const ax = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
-  if (ax?.isAxiosError) {
-    const status = ax.response?.status ?? 0;
-    const data = ax.response?.data;
-    const message =
-      (data && typeof data === 'object' && data.message) ||
-      ax.message ||
-      'Network error';
-    return {
-      status,
-      message: typeof message === 'string' ? message : 'Network error',
-      errors: data && typeof data === 'object' ? data.errors : undefined,
-    };
-  }
-  return { status: 0, message: (err as Error)?.message ?? 'Unknown error' };
+function buildUrl(path: string, params?: ApiRequestConfig['params']): string {
+  const url = new URL(`${baseURL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`, window.location.origin);
+  Object.entries(params ?? {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') url.searchParams.set(key, String(value));
+  });
+  return url.toString();
 }
 
-export async function api<T>(config: AxiosRequestConfig): Promise<T> {
+async function readJson(response: Response): Promise<any> {
+  const text = await response.text();
+  if (!text) return null;
   try {
-    const res = await apiClient.request<T>(config);
-    return res.data;
-  } catch (err) {
-    throw toApiError(err);
+    return JSON.parse(text);
+  } catch {
+    return text;
   }
+}
+
+export async function api<T>(config: ApiRequestConfig): Promise<T> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
+    ...config.headers,
+  };
+
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (config.data !== undefined) headers['Content-Type'] = 'application/json';
+
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(config.url, config.params), {
+      method: config.method ?? 'GET',
+      headers,
+      body: config.data !== undefined ? JSON.stringify(config.data) : undefined,
+    });
+  } catch (err) {
+    throw { status: 0, message: (err as Error)?.message ?? 'Network error' } satisfies ApiError;
+  }
+
+  const data = await readJson(response);
+  if (!response.ok) {
+    throw {
+      status: response.status,
+      message: data?.message ?? response.statusText ?? 'Request failed',
+      errors: data?.errors,
+    } satisfies ApiError;
+  }
+
+  return data as T;
 }

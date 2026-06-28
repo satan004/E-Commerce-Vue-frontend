@@ -1,30 +1,66 @@
 import { defineStore } from 'pinia';
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import type { User } from '@/data/types';
+import * as authApi from '@/services/auth';
+import { getAuthToken, setAuthToken } from '@/services/apiClient';
 
 const STORAGE_KEY = 'mm-auth';
 
-interface StoredAuth {
-  user: User | null;
-  token: string | null;
+function parseAddress(address?: string | null): User['address'] | undefined {
+  if (!address) return undefined;
+  try {
+    const parsed = JSON.parse(address);
+    if (parsed && typeof parsed === 'object') return parsed;
+  } catch {}
+  return {
+    line1: address,
+    city: '',
+    state: '',
+    pincode: '',
+  };
 }
 
-function load(): StoredAuth {
+function formatAddress(address?: User['address']): string | undefined {
+  if (!address) return undefined;
+  return JSON.stringify(address);
+}
+
+function adaptUser(user: authApi.AuthUser): User {
+  return {
+    id: String(user.id),
+    fullName: user.name,
+    email: user.email,
+    phone: user.phone ?? undefined,
+    address: parseAddress(user.address),
+  };
+}
+
+function loadUser(): User | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return parsed?.user ?? parsed ?? null;
+    }
   } catch {}
-  return { user: null, token: null };
+  return null;
 }
 
 export const useAuthStore = defineStore('auth', () => {
-  const initial = load();
-  const user = ref<User | null>(initial.user);
-  const token = ref<string | null>(initial.token);
+  const user = ref<User | null>(loadUser());
+  const token = ref<string | null>(getAuthToken());
+  const loading = ref(false);
 
   const isAuthenticated = computed(() => !!user.value);
 
-  function login(email: string, password: string): { ok: boolean; error?: string } {
+  function persist(nextUser: User | null, nextToken = getAuthToken()) {
+    user.value = nextUser;
+    token.value = nextToken;
+    if (nextUser) localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: nextUser }));
+    else localStorage.removeItem(STORAGE_KEY);
+  }
+
+  async function login(email: string, password: string): Promise<{ ok: boolean; error?: string }> {
     const trimmedEmail = (email ?? '').trim();
     if (!trimmedEmail || !password) {
       return { ok: false, error: 'Please enter email and password.' };
@@ -36,24 +72,24 @@ export const useAuthStore = defineStore('auth', () => {
       return { ok: false, error: 'Password must be at least 4 characters.' };
     }
 
-    const localPart = trimmedEmail.split('@')[0] ?? '';
-    const fullName = localPart
-      .replace(/[._-]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .replace(/\b\w/g, (c) => c.toUpperCase()) || 'User';
-
-    user.value = { id: 'u-' + Date.now(), fullName, email: trimmedEmail };
-    token.value = 'demo-token-' + Date.now();
-    return { ok: true };
+    loading.value = true;
+    try {
+      const data = await authApi.login(trimmedEmail, password);
+      persist(adaptUser(data.user), data.token);
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? 'Login failed.' };
+    } finally {
+      loading.value = false;
+    }
   }
 
-  function register(payload: {
+  async function register(payload: {
     fullName: string;
     email: string;
     password: string;
     phone?: string;
-  }): { ok: boolean; error?: string } {
+  }): Promise<{ ok: boolean; error?: string }> {
     const fullName = (payload.fullName ?? '').trim();
     const email = (payload.email ?? '').trim();
     const password = payload.password ?? '';
@@ -66,34 +102,55 @@ export const useAuthStore = defineStore('auth', () => {
     if (password.length < 4) {
       return { ok: false, error: 'Password must be at least 4 characters.' };
     }
-    user.value = {
-      id: 'u-' + Date.now(),
-      fullName,
-      email,
-      phone: payload.phone?.trim() || undefined,
-    };
-    token.value = 'demo-token-' + Date.now();
-    return { ok: true };
+
+    loading.value = true;
+    try {
+      const data = await authApi.register({
+        name: fullName,
+        email,
+        password,
+        password_confirmation: password,
+        phone: payload.phone,
+      });
+      persist(adaptUser(data.user), data.token);
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? 'Registration failed.' };
+    } finally {
+      loading.value = false;
+    }
   }
 
-  function updateProfile(updates: Partial<User>) {
+  async function loadProfile(): Promise<void> {
+    if (!getAuthToken()) return;
+    loading.value = true;
+    try {
+      const profile = await authApi.fetchProfile();
+      persist(adaptUser(profile));
+    } catch {
+      setAuthToken(null);
+      persist(null, null);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function updateProfile(updates: Partial<User>) {
     if (!user.value) return;
-    user.value = { ...user.value, ...updates };
+    const next = { ...user.value, ...updates };
+    const saved = await authApi.updateProfile({
+      name: next.fullName,
+      email: next.email,
+      phone: next.phone,
+      address: formatAddress(next.address),
+    });
+    persist(adaptUser(saved));
   }
 
-  function logout() {
-    user.value = null;
-    token.value = null;
+  async function logout() {
+    await authApi.logout();
+    persist(null, null);
   }
 
-  watch(
-    [user, token],
-    () => {
-      const data: StoredAuth = { user: user.value, token: token.value };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    },
-    { deep: true },
-  );
-
-  return { user, token, isAuthenticated, login, register, logout, updateProfile };
+  return { user, token, loading, isAuthenticated, login, register, logout, loadProfile, updateProfile };
 });

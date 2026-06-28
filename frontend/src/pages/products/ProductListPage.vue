@@ -1,18 +1,15 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ProductCardWidget from '@/widgets/product-card/ProductCardWidget.vue';
 import SectionHeaderWidget from '@/widgets/section-header/SectionHeaderWidget.vue';
-import {
-  products,
-  topCategories,
-  searchProducts,
-  getProductsByCategory,
-} from '@/data/megamart';
 import type { Product } from '@/data/types';
+import { useCatalogStore } from '@/store/modules/catalog';
+import type { ProductQuery } from '@/services/catalog';
 
 const route = useRoute();
 const router = useRouter();
+const catalog = useCatalogStore();
 
 const categorySlug = computed(() => (route.params.slug as string) || '');
 const searchQuery = computed(() => (route.query.q as string) || '');
@@ -23,42 +20,21 @@ const maxPrice = ref(200000);
 const inStockOnly = ref(false);
 
 const categoryInfo = computed(() =>
-  topCategories.find((c) => c.slug === categorySlug.value),
+  catalog.categories.find((c) => c.slug === categorySlug.value),
 );
 
 const brandsForCategory = computed(() => {
-  const list = categorySlug.value
-    ? products.filter((p) => p.category === categorySlug.value)
-    : products;
+  const list = catalog.products;
   return ['All', ...Array.from(new Set(list.map((p) => p.brand)))];
 });
 
 const filtered = computed<Product[]>(() => {
-  let list: Product[] = searchQuery.value
-    ? searchProducts(searchQuery.value)
-    : categorySlug.value
-      ? getProductsByCategory(categorySlug.value)
-      : products;
+  let list: Product[] = catalog.products;
 
   if (activeBrand.value !== 'All') {
     list = list.filter((p) => p.brand === activeBrand.value);
   }
-  list = list.filter((p) => p.price >= minPrice.value && p.price <= maxPrice.value);
   if (inStockOnly.value) list = list.filter((p) => p.inStock !== false);
-
-  switch (activeSort.value) {
-    case 'lh':
-      list = [...list].sort((a, b) => a.price - b.price);
-      break;
-    case 'hl':
-      list = [...list].sort((a, b) => b.price - a.price);
-      break;
-    case 'discount':
-      list = [...list].sort((a, b) => (b.discount ?? 0) - (a.discount ?? 0));
-      break;
-    default:
-      list = [...list].sort((a, b) => (b.ratingCount ?? 0) - (a.ratingCount ?? 0));
-  }
   return list;
 });
 
@@ -79,10 +55,39 @@ function setSort(v: typeof activeSort.value) {
   activeSort.value = v;
 }
 
+function loadProducts() {
+  const query: ProductQuery = {
+    search: searchQuery.value || undefined,
+    category: categorySlug.value || undefined,
+    min_price: minPrice.value || undefined,
+    max_price: maxPrice.value || undefined,
+    sort:
+      activeSort.value === 'lh'
+        ? 'price_low'
+        : activeSort.value === 'hl'
+          ? 'price_high'
+          : activeSort.value === 'pop'
+            ? undefined
+            : 'name',
+    per_page: 48,
+  };
+  catalog.loadProducts(query);
+}
+
 function goCategory(slug: string | null) {
   if (slug) router.push(`/category/${slug}`);
   else router.push('/products');
 }
+
+onMounted(() => {
+  catalog.loadCategories();
+  loadProducts();
+});
+
+watch([categorySlug, searchQuery, activeSort], () => {
+  activeBrand.value = 'All';
+  loadProducts();
+});
 </script>
 
 <template>
@@ -104,7 +109,7 @@ function goCategory(slug: string | null) {
               <li>
                 <button :class="{ active: !categorySlug }" @click="goCategory(null)">All Products</button>
               </li>
-              <li v-for="c in topCategories" :key="c.id">
+              <li v-for="c in catalog.categories" :key="c.id">
                 <button
                   :class="{ active: c.slug === categorySlug }"
                   @click="goCategory(c.slug)"
@@ -118,9 +123,9 @@ function goCategory(slug: string | null) {
           <div class="side-block">
             <h4>Price range</h4>
             <div class="price-row">
-              <input v-model.number="minPrice" type="number" placeholder="Min" min="0" />
+              <input v-model.number="minPrice" type="number" placeholder="Min" min="0" @change="loadProducts" />
               <span>—</span>
-              <input v-model.number="maxPrice" type="number" placeholder="Max" min="0" />
+              <input v-model.number="maxPrice" type="number" placeholder="Max" min="0" @change="loadProducts" />
             </div>
           </div>
 
@@ -135,7 +140,7 @@ function goCategory(slug: string | null) {
 
         <section class="listing-main">
           <div class="listing-toolbar">
-            <p class="result-count">{{ filtered.length }} products</p>
+            <p class="result-count">{{ catalog.loading ? 'Loading products...' : `${filtered.length} products` }}</p>
             <div class="brand-tabs">
               <button
                 v-for="b in brandsForCategory"

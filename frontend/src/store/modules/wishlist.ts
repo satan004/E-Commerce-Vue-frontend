@@ -1,35 +1,41 @@
 import { defineStore } from 'pinia';
-import { ref, computed, watch } from 'vue';
-import { products } from '@/data/megamart';
-
-const STORAGE_KEY = 'mm-wishlist';
-
-function load(): string[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return [];
-}
+import { ref, computed } from 'vue';
+import type { Product } from '@/data/types';
+import * as wishlistApi from '@/services/wishlist';
+import { adaptProduct } from '@/services/adapters';
 
 export const useWishlistStore = defineStore('wishlist', () => {
-  const ids = ref<string[]>(load());
-
-  const detailed = computed(() =>
-    ids.value
-      .map((id) => products.find((p) => p.id === id))
-      .filter((p): p is NonNullable<typeof p> => !!p),
-  );
+  const ids = ref<string[]>([]);
+  const detailed = ref<Product[]>([]);
+  const loading = ref(false);
+  const error = ref<string | null>(null);
 
   const count = computed(() => ids.value.length);
 
-  function toggle(productId: string): boolean {
+  async function loadWishlist() {
+    loading.value = true;
+    error.value = null;
+    try {
+      const items = await wishlistApi.fetchWishlist();
+      ids.value = items.map((it) => String(it.product_id));
+      detailed.value = items.map((it) => adaptProduct(it.product));
+    } catch (e: any) {
+      error.value = e?.message ?? 'Failed to load wishlist';
+      if (e?.status === 401) clear();
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function toggle(productId: string): Promise<boolean> {
     const idx = ids.value.indexOf(productId);
     if (idx >= 0) {
-      ids.value.splice(idx, 1);
+      await remove(productId);
       return false;
     }
+    const item = await wishlistApi.addWishlistItem(Number(productId));
     ids.value.push(productId);
+    detailed.value.unshift(adaptProduct(item.product));
     return true;
   }
 
@@ -37,21 +43,16 @@ export const useWishlistStore = defineStore('wishlist', () => {
     return ids.value.includes(productId);
   }
 
-  function remove(productId: string) {
+  async function remove(productId: string) {
+    await wishlistApi.removeWishlistItem(Number(productId));
     ids.value = ids.value.filter((id) => id !== productId);
+    detailed.value = detailed.value.filter((p) => p.id !== productId);
   }
 
   function clear() {
     ids.value = [];
+    detailed.value = [];
   }
 
-  watch(
-    ids,
-    () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(ids.value));
-    },
-    { deep: true },
-  );
-
-  return { ids, detailed, count, toggle, has, remove, clear };
+  return { ids, detailed, loading, error, count, loadWishlist, toggle, has, remove, clear };
 });

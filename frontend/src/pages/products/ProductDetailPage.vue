@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getProductBySlug, products } from '@/data/megamart';
 import ProductCardWidget from '@/widgets/product-card/ProductCardWidget.vue';
 import { useCartStore } from '@/store/modules/cart';
 import { useWishlistStore } from '@/store/modules/wishlist';
 import { useAuthStore } from '@/store/modules/auth';
+import * as catalogApi from '@/services/catalog';
+import { adaptProduct } from '@/services/adapters';
+import type { Product } from '@/data/types';
 
 const route = useRoute();
 const router = useRouter();
@@ -13,8 +15,8 @@ const cart = useCartStore();
 const wishlist = useWishlistStore();
 const auth = useAuthStore();
 
-const product = computed(() => getProductBySlug(route.params.slug as string));
-
+const product = ref<Product | null>(null);
+const related = ref<Product[]>([]);
 const qty = ref(1);
 const activeImg = ref(0);
 
@@ -23,32 +25,53 @@ const images = computed(() => {
   return [product.value.image, ...(product.value.images ?? [])];
 });
 
-const related = computed(() => {
-  if (!product.value) return [];
-  return products
-    .filter((p) => p.id !== product.value!.id && p.category === product.value!.category)
-    .slice(0, 4);
-});
+async function loadProduct() {
+  product.value = null;
+  related.value = [];
+  activeImg.value = 0;
 
-function addToCart() {
-  if (!product.value) return;
-  cart.add(product.value.id, qty.value);
-  router.push('/cart');
+  const apiProduct = await catalogApi.fetchProduct(route.params.slug as string);
+  product.value = adaptProduct(apiProduct);
+
+  const res = await catalogApi.fetchProducts({
+    category: product.value.category,
+    per_page: 5,
+  });
+  related.value = res.data
+    .map(adaptProduct)
+    .filter((p) => p.id !== product.value?.id)
+    .slice(0, 4);
 }
 
-function buyNow() {
+watch(() => route.params.slug, () => void loadProduct(), { immediate: true });
+
+async function addToCart() {
   if (!product.value) return;
   if (!auth.isAuthenticated) {
     router.push({ path: '/login', query: { redirect: `/product/${product.value.slug}` } });
     return;
   }
-  cart.add(product.value.id, qty.value);
+  await cart.add(product.value.id, qty.value);
+  router.push('/cart');
+}
+
+async function buyNow() {
+  if (!product.value) return;
+  if (!auth.isAuthenticated) {
+    router.push({ path: '/login', query: { redirect: `/product/${product.value.slug}` } });
+    return;
+  }
+  await cart.add(product.value.id, qty.value);
   router.push('/checkout');
 }
 
-function toggleFav() {
+async function toggleFav() {
   if (!product.value) return;
-  wishlist.toggle(product.value.id);
+  if (!auth.isAuthenticated) {
+    router.push({ path: '/login', query: { redirect: `/product/${product.value.slug}` } });
+    return;
+  }
+  await wishlist.toggle(product.value.id);
 }
 </script>
 

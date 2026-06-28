@@ -35,28 +35,32 @@ const initials = computed(() => {
     .toUpperCase();
 });
 
-function save() {
+async function save() {
   saving.value = true;
-  auth.updateProfile({
-    fullName: form.fullName,
-    email: form.email,
-    phone: form.phone,
-    address: {
-      line1: form.line1,
-      city: form.city,
-      state: form.state,
-      pincode: form.pincode,
-    },
-  });
-  setTimeout(() => {
-    saving.value = false;
+  try {
+    await auth.updateProfile({
+      fullName: form.fullName,
+      email: form.email,
+      phone: form.phone,
+      address: {
+        line1: form.line1,
+        city: form.city,
+        state: form.state,
+        pincode: form.pincode,
+      },
+    });
     saved.value = true;
     setTimeout(() => (saved.value = false), 2000);
-  }, 400);
+  } finally {
+    saving.value = false;
+  }
 }
 
-function logout() {
-  auth.logout();
+async function logout() {
+  await auth.logout();
+  cart.clear();
+  wishlist.clear();
+  orders.clear();
   router.push('/');
 }
 </script>

@@ -1,20 +1,27 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import HeroBannerWidget from '@/widgets/hero-banner/HeroBannerWidget.vue';
 import CategoryCardWidget from '@/widgets/category-card/CategoryCardWidget.vue';
 import ProductCardWidget from '@/widgets/product-card/ProductCardWidget.vue';
 import BrandCardWidget from '@/widgets/brand-card/BrandCardWidget.vue';
 import SectionHeaderWidget from '@/widgets/section-header/SectionHeaderWidget.vue';
-import { products, topCategories, brands, popularPhones } from '@/data/megamart';
+import { brands, popularPhones } from '@/data/megamart';
+import { useCatalogStore } from '@/store/modules/catalog';
 
-// Get featured smartphones for the hero products section
-const featuredProducts = computed(() => products.slice(0, 5));
+const catalog = useCatalogStore();
+
+onMounted(() => {
+  catalog.loadCategories();
+  catalog.loadFeatured(8);
+});
+
+const featuredProducts = computed(() => catalog.featured);
 
 // Get brands to display
 const brandList = computed(() => brands);
 
 // Get top categories
-const categoryList = computed(() => topCategories);
+const categoryList = computed(() => catalog.categories);
 
 // Get popular phones
 const popularPhonesList = computed(() => popularPhones);

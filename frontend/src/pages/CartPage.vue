@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCartStore } from '@/store/modules/cart';
+import { useAuthStore } from '@/store/modules/auth';
 
 const cart = useCartStore();
+const auth = useAuthStore();
 const router = useRouter();
 
 const items = computed(() => cart.detailed);
+
+onMounted(() => {
+  if (auth.isAuthenticated) cart.loadCart();
+});
 
 function checkout() {
   router.push('/checkout');

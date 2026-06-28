@@ -15,13 +15,13 @@ const form = reactive({
 const error = ref('');
 const submitting = ref(false);
 
-function submit() {
+async function submit() {
   if (submitting.value) return;
   error.value = '';
   submitting.value = true;
 
   try {
-    const result = auth.login(form.email.trim(), form.password);
+    const result = await auth.login(form.email.trim(), form.password);
     if (!result.ok) {
       error.value = result.error ?? 'Login failed.';
       submitting.value = false;
@@ -34,6 +34,7 @@ function submit() {
     });
   } catch (e) {
     error.value = (e as Error).message || 'Unexpected error.';
+  } finally {
     submitting.value = false;
   }
 }

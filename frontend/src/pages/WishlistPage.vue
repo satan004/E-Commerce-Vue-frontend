@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useWishlistStore } from '@/store/modules/wishlist';
 import ProductCardWidget from '@/widgets/product-card/ProductCardWidget.vue';
+import { useAuthStore } from '@/store/modules/auth';
 
 const wishlist = useWishlistStore();
+const auth = useAuthStore();
 const items = computed(() => wishlist.detailed);
+
+onMounted(() => {
+  if (auth.isAuthenticated) wishlist.loadWishlist();
+});
 </script>
 
 <template>

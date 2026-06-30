@@ -2,6 +2,8 @@
 import type { Product } from '@/data/types';
 import { useWishlistStore } from '@/store/modules/wishlist';
 import { useAuthStore } from '@/store/modules/auth';
+import { formatPrice } from '@/utils/currency';
+import { loginRedirect } from '@/utils/authRedirect';
 import { useRouter } from 'vue-router';
 
 const props = defineProps<{ product: Product }>();
@@ -15,7 +17,7 @@ async function toggleFav(e: Event) {
   e.preventDefault();
   e.stopPropagation();
   if (!auth.isAuthenticated) {
-    await router.push({ path: '/login', query: { redirect: `/product/${props.product.slug}` } });
+    await router.push(loginRedirect('/wishlist'));
     return;
   }
   await wishlist.toggle(props.product.id);
@@ -46,11 +48,11 @@ async function toggleFav(e: Event) {
         <span class="mm-pc-rating-count">({{ product.ratingCount }})</span>
       </div>
       <div class="mm-pc-pricing">
-        <span class="mm-pc-price">₹{{ product.price.toLocaleString('en-IN') }}</span>
-        <span v-if="product.oldPrice" class="mm-pc-old">₹{{ product.oldPrice.toLocaleString('en-IN') }}</span>
+        <span class="mm-pc-price">{{ formatPrice(product.price) }}</span>
+        <span v-if="product.oldPrice" class="mm-pc-old">{{ formatPrice(product.oldPrice) }}</span>
       </div>
       <p v-if="product.oldPrice" class="mm-pc-save">
-        Save - ₹{{ (product.oldPrice - product.price).toLocaleString('en-IN') }}
+        Save - {{ formatPrice(product.oldPrice - product.price) }}
       </p>
     </div>
   </RouterLink>

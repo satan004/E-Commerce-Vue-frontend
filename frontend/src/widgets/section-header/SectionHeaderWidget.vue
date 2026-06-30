@@ -3,6 +3,9 @@ defineProps<{
   prefix?: string;
   accent: string;
   viewAll?: boolean;
+  viewAllTo?: string;
+  allProducts?: boolean;
+  allProductsTo?: string;
 }>();
 </script>
 
@@ -12,11 +15,16 @@ defineProps<{
       <span v-if="prefix" class="prefix">{{ prefix }} </span>
       <span class="accent">{{ accent }}</span>
     </h2>
-    <a v-if="viewAll" href="#" class="view-all">View All
-      <svg class="arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="9 18 15 12 9 6" />
-      </svg>
-    </a>
+    <div class="section-actions">
+      <RouterLink v-if="allProducts" :to="allProductsTo ?? '/products'" class="all-products-link">
+        All Products
+      </RouterLink>
+      <RouterLink v-if="viewAll" :to="viewAllTo ?? '/products'" class="view-all">View All
+        <svg class="arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </RouterLink>
+    </div>
   </div>
 </template>
 
@@ -39,6 +47,28 @@ defineProps<{
 .section-title h2 .accent {
   color: var(--mm-primary);
 }
+.section-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.all-products-link {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--mm-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 16px;
+  box-shadow: 0 10px 20px rgba(43, 190, 249, 0.2);
+}
+.all-products-link:hover {
+  background: var(--mm-primary-dark);
+}
 .view-all {
   color: var(--mm-primary);
   font-size: 14px;
@@ -52,5 +82,19 @@ defineProps<{
 }
 .view-all .arrow {
   margin-top: 1px;
+}
+
+@media (max-width: 560px) {
+  .section-title {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .section-actions {
+    gap: 8px;
+  }
+  .all-products-link,
+  .view-all {
+    min-height: 34px;
+  }
 }
 </style>

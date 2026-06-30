@@ -2,6 +2,7 @@
 import { computed, ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useOrdersStore } from '@/store/modules/orders';
+import { formatPrice } from '@/utils/currency';
 import type { Order } from '@/data/types';
 
 const orders = useOrdersStore();
@@ -76,7 +77,7 @@ function formatDate(iso: string): string {
           </div>
           <div class="oh-cell">
             <p class="oh-label">Total</p>
-            <p class="oh-value">₹{{ order.total.toLocaleString('en-IN') }}</p>
+            <p class="oh-value">{{ formatPrice(order.total) }}</p>
           </div>
           <div class="oh-cell">
             <p class="oh-label">Status</p>
@@ -97,9 +98,9 @@ function formatDate(iso: string): string {
               <img :src="it.image" :alt="it.name" />
               <div class="oi-info">
                 <p class="oi-name">{{ it.name }}</p>
-                <p class="oi-meta">Qty: {{ it.qty }} × ₹{{ it.price.toLocaleString('en-IN') }}</p>
+                <p class="oi-meta">Qty: {{ it.qty }} × {{ formatPrice(it.price) }}</p>
               </div>
-              <span class="oi-price">₹{{ (it.qty * it.price).toLocaleString('en-IN') }}</span>
+              <span class="oi-price">{{ formatPrice(it.qty * it.price) }}</span>
             </div>
           </div>
 
@@ -115,9 +116,9 @@ function formatDate(iso: string): string {
               <h4>Payment</h4>
               <p>{{ order.payment }}</p>
               <h4 style="margin-top: 12px">Order summary</h4>
-              <p>Subtotal: ₹{{ order.subtotal.toLocaleString('en-IN') }}</p>
-              <p>Shipping: {{ order.shipping === 0 ? 'FREE' : '₹' + order.shipping.toLocaleString('en-IN') }}</p>
-              <p class="strong">Total: ₹{{ order.total.toLocaleString('en-IN') }}</p>
+              <p>Subtotal: {{ formatPrice(order.subtotal) }}</p>
+              <p>Shipping: {{ order.shipping === 0 ? 'FREE' : formatPrice(order.shipping) }}</p>
+              <p class="strong">Total: {{ formatPrice(order.total) }}</p>
             </div>
           </div>
         </div>

@@ -1,19 +1,25 @@
 <script setup lang="ts">
-import { navCategories } from '@/data/megamart';
+import { onMounted } from 'vue';
+import { useCatalogStore } from '@/store/modules/catalog';
+
+const catalog = useCatalogStore();
+
+onMounted(() => {
+  if (catalog.categories.length === 0) catalog.loadCategories();
+});
 </script>
 
 <template>
   <nav class="mm-category-bar">
     <div class="container mm-category-inner">
-      <a
-        v-for="cat in navCategories"
-        :key="cat"
-        href="#"
+      <RouterLink
+        v-for="cat in catalog.categories"
+        :key="cat.id"
+        :to="`/category/${cat.slug}`"
         class="mm-category-item"
       >
-        <span>{{ cat }}</span>
-        <span class="mm-cat-arrow">▾</span>
-      </a>
+        <span>{{ cat.name }}</span>
+      </RouterLink>
     </div>
   </nav>
 </template>
@@ -43,7 +49,6 @@ import { navCategories } from '@/data/megamart';
 .mm-category-item {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
   padding: 7px 14px;
   border-radius: 999px;
   font-size: 13.5px;
@@ -58,8 +63,4 @@ import { navCategories } from '@/data/megamart';
   color: var(--mm-primary);
 }
 
-.mm-cat-arrow {
-  font-size: 9px;
-  opacity: 0.7;
-}
 </style>

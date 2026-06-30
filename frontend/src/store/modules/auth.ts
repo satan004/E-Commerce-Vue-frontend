@@ -31,6 +31,7 @@ function adaptUser(user: authApi.AuthUser): User {
     fullName: user.name,
     email: user.email,
     phone: user.phone ?? undefined,
+    avatarUrl: user.avatar_url ?? undefined,
     address: parseAddress(user.address),
   };
 }
@@ -51,7 +52,7 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(getAuthToken());
   const loading = ref(false);
 
-  const isAuthenticated = computed(() => !!user.value);
+  const isAuthenticated = computed(() => !!user.value && !!token.value);
 
   function persist(nextUser: User | null, nextToken = getAuthToken()) {
     user.value = nextUser;
@@ -79,6 +80,31 @@ export const useAuthStore = defineStore('auth', () => {
       return { ok: true };
     } catch (e: any) {
       return { ok: false, error: e?.message ?? 'Login failed.' };
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function loginWithToken(authToken: string): Promise<{ ok: boolean; error?: string }> {
+    if (!authToken) {
+      return { ok: false, error: 'Google login did not return an auth token.' };
+    }
+
+    loading.value = true;
+    try {
+      setAuthToken(authToken);
+      token.value = authToken;
+      await loadProfile();
+
+      if (!user.value) {
+        throw new Error('Unable to load your profile after Google login.');
+      }
+
+      return { ok: true };
+    } catch (e: any) {
+      setAuthToken(null);
+      persist(null, null);
+      return { ok: false, error: e?.message ?? 'Google login failed.' };
     } finally {
       loading.value = false;
     }
@@ -147,10 +173,24 @@ export const useAuthStore = defineStore('auth', () => {
     persist(adaptUser(saved));
   }
 
+  async function updateProfileWithAvatar(updates: Partial<User> & { avatar?: File | null; removeAvatar?: boolean }) {
+    if (!user.value) return;
+    const next = { ...user.value, ...updates };
+    const saved = await authApi.updateProfile({
+      name: next.fullName,
+      email: next.email,
+      phone: next.phone,
+      address: formatAddress(next.address),
+      avatar: updates.avatar,
+      remove_avatar: updates.removeAvatar,
+    });
+    persist(adaptUser(saved));
+  }
+
   async function logout() {
     await authApi.logout();
     persist(null, null);
   }
 
-  return { user, token, loading, isAuthenticated, login, register, logout, loadProfile, updateProfile };
+  return { user, token, loading, isAuthenticated, login, loginWithToken, register, logout, loadProfile, updateProfile, updateProfileWithAvatar };
 });

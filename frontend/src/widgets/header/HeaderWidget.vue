@@ -23,20 +23,14 @@ function submitSearch() {
     <div class="container mm-header-inner">
       <RouterLink to="/" class="mm-logo">
         <span class="mm-logo-icon" aria-hidden="true">
-          <svg width="22" height="18" viewBox="0 0 22 18" fill="none">
-            <rect y="2" width="22" height="3" rx="1.5" fill="#2bbef9" />
-            <rect y="8" width="22" height="3" rx="1.5" fill="#2bbef9" />
-            <rect y="14" width="22" height="3" rx="1.5" fill="#2bbef9" />
-          </svg>
+          <img src="../../assets/icons/Icon web.png" width="45" height="45"alt="">
         </span>
-        <span class="mm-logo-text">MegaMart</span>
+        <span class="mm-logo-text">PHONE SHOP</span>
       </RouterLink>
 
       <form class="mm-search" @submit.prevent="submitSearch">
         <span class="mm-search-icon" aria-hidden="true">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a93a3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="7" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          <svg width="16" height="16" viewBox="0 0 0 0">
           </svg>
         </span>
         <input
@@ -46,9 +40,8 @@ function submitSearch() {
         />
         <button type="button" class="mm-search-btn" aria-label="Open categories">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5b6472" stroke-width="2" stroke-linecap="round">
-            <line x1="4" y1="7" x2="20" y2="7" />
-            <line x1="4" y1="12" x2="20" y2="12" />
-            <line x1="4" y1="17" x2="20" y2="17" />
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
         </button>
       </form>
@@ -74,7 +67,6 @@ function submitSearch() {
             </svg>
             <span v-if="wishlist.count" class="mm-badge">{{ wishlist.count }}</span>
           </span>
-          <span class="mm-action-text">Wishlist</span>
         </RouterLink>
 
         <RouterLink to="/cart" class="mm-action">
@@ -86,7 +78,6 @@ function submitSearch() {
             </svg>
             <span v-if="cart.itemCount" class="mm-badge">{{ cart.itemCount }}</span>
           </span>
-          <span class="mm-action-text">Cart</span>
         </RouterLink>
       </div>
     </div>
@@ -117,7 +108,7 @@ function submitSearch() {
   flex-shrink: 0;
 }
 .mm-logo-icon { display: inline-flex; }
-.mm-logo-text { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; color: #19294a; }
+.mm-logo-text { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; color: #033496; }
 
 .mm-search {
   flex: 1;

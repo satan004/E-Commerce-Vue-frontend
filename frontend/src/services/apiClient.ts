@@ -58,6 +58,7 @@ async function readJson(response: Response): Promise<any> {
 
 export async function api<T>(config: ApiRequestConfig): Promise<T> {
   const token = getAuthToken();
+  const isFormData = typeof FormData !== 'undefined' && config.data instanceof FormData;
   const headers: Record<string, string> = {
     Accept: 'application/json',
     'X-Requested-With': 'XMLHttpRequest',
@@ -65,14 +66,20 @@ export async function api<T>(config: ApiRequestConfig): Promise<T> {
   };
 
   if (token) headers.Authorization = `Bearer ${token}`;
-  if (config.data !== undefined) headers['Content-Type'] = 'application/json';
+  if (config.data !== undefined && !isFormData) headers['Content-Type'] = 'application/json';
+
+  const body: BodyInit | undefined = config.data === undefined
+    ? undefined
+    : isFormData
+      ? config.data as FormData
+      : JSON.stringify(config.data);
 
   let response: Response;
   try {
     response = await fetch(buildUrl(config.url, config.params), {
       method: config.method ?? 'GET',
       headers,
-      body: config.data !== undefined ? JSON.stringify(config.data) : undefined,
+      body,
     });
   } catch (err) {
     throw { status: 0, message: (err as Error)?.message ?? 'Network error' } satisfies ApiError;

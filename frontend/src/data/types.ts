@@ -15,6 +15,16 @@ export interface Product {
   highlights?: string[];
   specs?: Record<string, string>;
   inStock?: boolean;
+  reviews?: ProductReview[];
+}
+
+export interface ProductReview {
+  id: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  comment?: string;
+  createdAt?: string;
 }
 
 export interface Category {
@@ -64,6 +74,7 @@ export interface User {
   fullName: string;
   email: string;
   phone?: string;
+  avatarUrl?: string;
   address?: {
     line1: string;
     city: string;

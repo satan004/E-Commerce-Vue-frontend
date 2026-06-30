@@ -1,15 +1,22 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import ProductCardWidget from '@/widgets/product-card/ProductCardWidget.vue';
 import SectionHeaderWidget from '@/widgets/section-header/SectionHeaderWidget.vue';
 import type { Product } from '@/data/types';
 import { useCatalogStore } from '@/store/modules/catalog';
+import { useCartStore } from '@/store/modules/cart';
+import { useWishlistStore } from '@/store/modules/wishlist';
+import { useAuthStore } from '@/store/modules/auth';
 import type { ProductQuery } from '@/services/catalog';
+import { formatPrice } from '@/utils/currency';
+import { loginRedirect } from '@/utils/authRedirect';
 
 const route = useRoute();
 const router = useRouter();
 const catalog = useCatalogStore();
+const cart = useCartStore();
+const wishlist = useWishlistStore();
+const auth = useAuthStore();
 
 const categorySlug = computed(() => (route.params.slug as string) || '');
 const searchQuery = computed(() => (route.query.q as string) || '');
@@ -18,6 +25,11 @@ const activeSort = ref<'pop' | 'lh' | 'hl' | 'discount'>('pop');
 const minPrice = ref(0);
 const maxPrice = ref(200000);
 const inStockOnly = ref(false);
+const toastMessage = ref('');
+const toastTone = ref<'success' | 'error'>('success');
+let toastTimer: number | undefined;
+
+const requestedCategoryLabels = ['iPhone', 'OPPO', 'Pixel', 'Realme', 'Samsung', 'Vivo'];
 
 const categoryInfo = computed(() =>
   catalog.categories.find((c) => c.slug === categorySlug.value),
@@ -27,6 +39,16 @@ const brandsForCategory = computed(() => {
   const list = catalog.products;
   return ['All', ...Array.from(new Set(list.map((p) => p.brand)))];
 });
+
+const phoneCategoryFilters = computed(() =>
+  requestedCategoryLabels.map((label) => {
+    const match = catalog.categories.find((category) => category.name.toLowerCase() === label.toLowerCase());
+    return {
+      label,
+      slug: match?.slug ?? label.toLowerCase(),
+    };
+  }),
+);
 
 const filtered = computed<Product[]>(() => {
   let list: Product[] = catalog.products;
@@ -79,6 +101,57 @@ function goCategory(slug: string | null) {
   else router.push('/products');
 }
 
+async function addToCart(product: Product) {
+  if (!auth.isAuthenticated) {
+    await router.push(loginRedirect('/products'));
+    return;
+  }
+
+  try {
+    await cart.add(product.id, 1);
+    showToast(`${product.name} added to cart.`);
+  } catch (e: any) {
+    showToast(e?.message ?? 'Could not add product to cart.', 'error');
+  }
+}
+
+async function buyNow(product: Product) {
+  if (!auth.isAuthenticated) {
+    await router.push(loginRedirect('/checkout'));
+    return;
+  }
+
+  try {
+    await cart.add(product.id, 1);
+    await router.push('/checkout');
+  } catch (e: any) {
+    showToast(e?.message ?? 'Could not start checkout.', 'error');
+  }
+}
+
+async function toggleWishlist(product: Product) {
+  if (!auth.isAuthenticated) {
+    await router.push(loginRedirect('/wishlist'));
+    return;
+  }
+
+  try {
+    const added = await wishlist.toggle(product.id);
+    showToast(added ? `${product.name} added to wishlist.` : `${product.name} removed from wishlist.`);
+  } catch (e: any) {
+    showToast(e?.message ?? 'Could not update wishlist.', 'error');
+  }
+}
+
+function showToast(message: string, tone: 'success' | 'error' = 'success') {
+  toastMessage.value = message;
+  toastTone.value = tone;
+  if (toastTimer) window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toastMessage.value = '';
+  }, 2600);
+}
+
 onMounted(() => {
   catalog.loadCategories();
   loadProducts();
@@ -118,6 +191,20 @@ watch([categorySlug, searchQuery, activeSort], () => {
                 </button>
               </li>
             </ul>
+          </div>
+
+          <div class="side-block">
+            <h4>Phone brands</h4>
+            <div class="phone-filter-list">
+              <button
+                v-for="category in phoneCategoryFilters"
+                :key="category.slug"
+                :class="{ active: category.slug === categorySlug }"
+                @click="goCategory(category.slug)"
+              >
+                {{ category.label }}
+              </button>
+            </div>
           </div>
 
           <div class="side-block">
@@ -166,15 +253,53 @@ watch([categorySlug, searchQuery, activeSort], () => {
           </div>
 
           <div v-else class="grid">
-            <ProductCardWidget
+            <article
               v-for="product in filtered"
               :key="product.id"
-              :product="product"
-            />
+              class="catalog-card"
+            >
+              <RouterLink :to="`/product/${product.slug}`" class="catalog-image">
+                <img :src="product.image" :alt="product.name" loading="lazy" />
+              </RouterLink>
+              <div class="catalog-body">
+                <div class="catalog-meta">
+                  <RouterLink :to="`/category/${product.category}`" class="catalog-category">
+                    {{ product.brand }}
+                  </RouterLink>
+                  <button
+                    class="wishlist-btn"
+                    :class="{ active: wishlist.has(product.id) }"
+                    type="button"
+                    :aria-label="wishlist.has(product.id) ? 'Remove from wishlist' : 'Add to wishlist'"
+                    @click="toggleWishlist(product)"
+                  >
+                    &#9825;
+                  </button>
+                </div>
+                <RouterLink :to="`/product/${product.slug}`" class="catalog-name">
+                  {{ product.name }}
+                </RouterLink>
+                <div class="catalog-price-row">
+                  <span class="catalog-price">{{ formatPrice(product.price) }}</span>
+                  <span v-if="product.oldPrice" class="catalog-old-price">{{ formatPrice(product.oldPrice) }}</span>
+                </div>
+                <div class="catalog-actions">
+                  <button class="add-cart-btn" type="button" @click="addToCart(product)">Add to Cart</button>
+                  <button class="buy-now-btn" type="button" @click="buyNow(product)">Buy Now</button>
+                </div>
+              </div>
+            </article>
           </div>
         </section>
       </div>
     </div>
+
+    <Transition name="catalog-toast">
+      <div v-if="toastMessage" class="catalog-toast" :class="toastTone" role="status" aria-live="polite">
+        <span aria-hidden="true">{{ toastTone === 'success' ? '✓' : '!' }}</span>
+        {{ toastMessage }}
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -230,6 +355,31 @@ watch([categorySlug, searchQuery, activeSort], () => {
 }
 .side-block button:hover { color: var(--mm-primary); }
 .side-block button.active { color: var(--mm-primary); font-weight: 700; }
+
+.phone-filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.phone-filter-list button {
+  width: auto;
+  min-height: 34px;
+  border: 1px solid var(--mm-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--mm-text-soft);
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.phone-filter-list button:hover,
+.phone-filter-list button.active {
+  border-color: var(--mm-primary);
+  background: var(--mm-primary-light);
+  color: var(--mm-primary-dark);
+}
 
 .price-row {
   display: flex;
@@ -297,6 +447,213 @@ watch([categorySlug, searchQuery, activeSort], () => {
   gap: 16px;
 }
 
+.catalog-card {
+  min-width: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius);
+  box-shadow: var(--mm-shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.catalog-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(43, 190, 249, 0.42);
+  box-shadow: var(--mm-shadow);
+}
+
+.catalog-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  background: #f7f9fc;
+  padding: 18px;
+}
+
+.catalog-image img {
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+  transition: transform 0.25s ease;
+}
+
+.catalog-card:hover .catalog-image img {
+  transform: scale(1.05);
+}
+
+.catalog-body {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.catalog-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.catalog-category {
+  min-width: 0;
+  color: var(--mm-primary-dark);
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.wishlist-btn {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--mm-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--mm-text-mute);
+  font-size: 22px;
+  line-height: 1;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.wishlist-btn:hover,
+.wishlist-btn.active {
+  border-color: #ffb4ad;
+  background: #fff5f5;
+  color: #ff3b30;
+  transform: translateY(-1px);
+}
+
+.catalog-name {
+  min-height: 42px;
+  color: var(--mm-text);
+  display: -webkit-box;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.catalog-name:hover {
+  color: var(--mm-primary);
+}
+
+.catalog-price-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.catalog-price {
+  color: var(--mm-text);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.catalog-old-price {
+  color: var(--mm-text-mute);
+  font-size: 12.5px;
+  text-decoration: line-through;
+}
+
+.catalog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.add-cart-btn,
+.buy-now-btn {
+  min-height: 40px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 900;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.add-cart-btn {
+  background: #fff;
+  border: 1.5px solid var(--mm-primary);
+  color: var(--mm-primary-dark);
+}
+
+.buy-now-btn {
+  background: var(--mm-primary);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(43, 190, 249, 0.2);
+}
+
+.add-cart-btn:hover {
+  background: var(--mm-primary-light);
+}
+
+.buy-now-btn:hover {
+  background: var(--mm-primary-dark);
+}
+
+.add-cart-btn:hover,
+.buy-now-btn:hover {
+  transform: translateY(-1px);
+}
+
+.catalog-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 260px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #dbeafe;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+  color: var(--mm-text);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.catalog-toast span {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  background: #10b981;
+  color: #fff;
+  font-weight: 900;
+}
+
+.catalog-toast.error {
+  border-color: #fecaca;
+}
+
+.catalog-toast.error span {
+  background: #ef4444;
+}
+
+.catalog-toast-enter-active,
+.catalog-toast-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.catalog-toast-enter-from,
+.catalog-toast-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
 .empty {
   background: #fff;
   border: 1px dashed var(--mm-border);
@@ -318,5 +675,25 @@ watch([categorySlug, searchQuery, activeSort], () => {
 }
 @media (max-width: 640px) {
   .grid { grid-template-columns: repeat(2, 1fr); }
+  .listing-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .brand-tabs,
+  .sort-tabs {
+    margin-left: 0;
+  }
+  .catalog-actions {
+    grid-template-columns: 1fr;
+  }
+  .catalog-body {
+    padding: 12px;
+  }
+  .catalog-toast {
+    right: 16px;
+    bottom: 16px;
+    min-width: 0;
+    width: calc(100vw - 32px);
+  }
 }
 </style>

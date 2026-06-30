@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ProductCardWidget from '@/widgets/product-card/ProductCardWidget.vue';
 import { useCartStore } from '@/store/modules/cart';
 import { useWishlistStore } from '@/store/modules/wishlist';
 import { useAuthStore } from '@/store/modules/auth';
+import { useOrdersStore } from '@/store/modules/orders';
 import * as catalogApi from '@/services/catalog';
 import { adaptProduct } from '@/services/adapters';
+import { formatPrice } from '@/utils/currency';
+import { loginRedirect } from '@/utils/authRedirect';
 import type { Product } from '@/data/types';
 
 const route = useRoute();
@@ -14,24 +17,56 @@ const router = useRouter();
 const cart = useCartStore();
 const wishlist = useWishlistStore();
 const auth = useAuthStore();
+const orders = useOrdersStore();
 
 const product = ref<Product | null>(null);
 const related = ref<Product[]>([]);
 const qty = ref(1);
 const activeImg = ref(0);
+const reviewRating = ref(5);
+const reviewComment = ref('');
+const reviewSubmitting = ref(false);
+const reviewError = ref('');
+const reviewSuccess = ref('');
+const showAuthPrompt = ref(false);
+const toastMessage = ref('');
+const toastTone = ref<'success' | 'error'>('success');
+let toastTimer: number | undefined;
 
 const images = computed(() => {
   if (!product.value) return [];
   return [product.value.image, ...(product.value.images ?? [])];
+});
+const productReviews = computed(() => product.value?.reviews ?? []);
+const canReview = computed(() => {
+  if (!product.value || !auth.isAuthenticated) return false;
+  return orders.orders.some((order) =>
+    order.status !== 'Cancelled' &&
+    order.items.some((item) => item.productId === product.value?.id),
+  );
+});
+const existingReview = computed(() => {
+  if (!product.value || !auth.user) return undefined;
+  return productReviews.value.find((review) => review.userId === auth.user?.id);
 });
 
 async function loadProduct() {
   product.value = null;
   related.value = [];
   activeImg.value = 0;
+  reviewError.value = '';
+  reviewSuccess.value = '';
 
   const apiProduct = await catalogApi.fetchProduct(route.params.slug as string);
   product.value = adaptProduct(apiProduct);
+  reviewRating.value = existingReview.value?.rating ?? 5;
+  reviewComment.value = existingReview.value?.comment ?? '';
+
+  if (auth.isAuthenticated) {
+    await orders.loadOrders();
+    reviewRating.value = existingReview.value?.rating ?? 5;
+    reviewComment.value = existingReview.value?.comment ?? '';
+  }
 
   const res = await catalogApi.fetchProducts({
     category: product.value.category,
@@ -48,30 +83,110 @@ watch(() => route.params.slug, () => void loadProduct(), { immediate: true });
 async function addToCart() {
   if (!product.value) return;
   if (!auth.isAuthenticated) {
-    router.push({ path: '/login', query: { redirect: `/product/${product.value.slug}` } });
+    openAuthPrompt();
     return;
   }
-  await cart.add(product.value.id, qty.value);
-  router.push('/cart');
+
+  try {
+    await cart.add(product.value.id, qty.value);
+    showToast('Product added to your cart.');
+  } catch (e: any) {
+    if (e?.status === 401) {
+      openAuthPrompt();
+      return;
+    }
+    showToast(e?.message ?? 'Could not add product to cart.', 'error');
+  }
 }
 
 async function buyNow() {
   if (!product.value) return;
   if (!auth.isAuthenticated) {
-    router.push({ path: '/login', query: { redirect: `/product/${product.value.slug}` } });
+    openAuthPrompt();
     return;
   }
-  await cart.add(product.value.id, qty.value);
-  router.push('/checkout');
+
+  try {
+    await cart.add(product.value.id, qty.value);
+    router.push('/checkout');
+  } catch (e: any) {
+    if (e?.status === 401) {
+      openAuthPrompt();
+      return;
+    }
+    showToast(e?.message ?? 'Could not start checkout.', 'error');
+  }
 }
 
+function openAuthPrompt() {
+  showAuthPrompt.value = true;
+}
+
+function closeAuthPrompt() {
+  showAuthPrompt.value = false;
+}
+
+function goToLogin() {
+  closeAuthPrompt();
+  router.push({ path: '/login', query: { redirect: product.value ? `/product/${product.value.slug}` : '/products' } });
+}
+
+function goToRegister() {
+  closeAuthPrompt();
+  router.push({ path: '/register', query: { redirect: product.value ? `/product/${product.value.slug}` : '/products' } });
+}
+
+function showToast(message: string, tone: 'success' | 'error' = 'success') {
+  toastMessage.value = message;
+  toastTone.value = tone;
+  if (toastTimer) window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toastMessage.value = '';
+  }, 2800);
+}
+
+onUnmounted(() => {
+  if (toastTimer) window.clearTimeout(toastTimer);
+});
+
 async function toggleFav() {
+  if (!product.value) return;
+  if (!auth.isAuthenticated) {
+    router.push(loginRedirect('/wishlist'));
+    return;
+  }
+  await wishlist.toggle(product.value.id);
+}
+
+async function submitReview() {
   if (!product.value) return;
   if (!auth.isAuthenticated) {
     router.push({ path: '/login', query: { redirect: `/product/${product.value.slug}` } });
     return;
   }
-  await wishlist.toggle(product.value.id);
+
+  reviewSubmitting.value = true;
+  reviewError.value = '';
+  reviewSuccess.value = '';
+
+  try {
+    const hadReview = !!existingReview.value;
+    const updated = await catalogApi.submitProductReview(product.value.id, {
+      rating: reviewRating.value,
+      comment: reviewComment.value.trim(),
+    });
+    product.value = adaptProduct(updated);
+    reviewSuccess.value = hadReview ? 'Your feedback was updated.' : 'Thanks for your feedback.';
+  } catch (e: any) {
+    reviewError.value = e?.errors?.product?.[0] ?? e?.message ?? 'Could not submit your review.';
+  } finally {
+    reviewSubmitting.value = false;
+  }
+}
+
+function formatReviewDate(value?: string): string {
+  if (!value) return '';
+  return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(value));
 }
 </script>
 
@@ -122,12 +237,12 @@ async function toggleFav() {
           </div>
 
           <div class="pdp-pricing">
-            <span class="pdp-price">₹{{ product.price.toLocaleString('en-IN') }}</span>
-            <span v-if="product.oldPrice" class="pdp-old">₹{{ product.oldPrice.toLocaleString('en-IN') }}</span>
+            <span class="pdp-price">{{ formatPrice(product.price) }}</span>
+            <span v-if="product.oldPrice" class="pdp-old">{{ formatPrice(product.oldPrice) }}</span>
             <span v-if="product.discount" class="pdp-discount">{{ product.discount }}% off</span>
           </div>
           <p v-if="product.oldPrice" class="pdp-save">
-            You save ₹{{ (product.oldPrice - product.price).toLocaleString('en-IN') }}
+            You save {{ formatPrice(product.oldPrice - product.price) }}
           </p>
 
           <p v-if="product.description" class="pdp-desc">{{ product.description }}</p>
@@ -173,6 +288,62 @@ async function toggleFav() {
           <ProductCardWidget v-for="p in related" :key="p.id" :product="p" />
         </div>
       </section>
+
+      <section class="reviews-panel">
+        <div class="reviews-head">
+          <div>
+            <p class="eyebrow">Customer feedback</p>
+            <h2>Reviews</h2>
+          </div>
+          <span class="review-summary">
+            {{ product.rating ? product.rating.toFixed(1) : 'No' }} ★ · {{ product.ratingCount ?? 0 }} reviews
+          </span>
+        </div>
+
+        <form v-if="canReview" class="review-form" @submit.prevent="submitReview">
+          <h3>{{ existingReview ? 'Update your review' : 'Write a review' }}</h3>
+          <label>
+            Rating
+            <select v-model.number="reviewRating" :disabled="reviewSubmitting">
+              <option v-for="rating in [5, 4, 3, 2, 1]" :key="rating" :value="rating">
+                {{ rating }} star{{ rating > 1 ? 's' : '' }}
+              </option>
+            </select>
+          </label>
+          <label>
+            Feedback
+            <textarea
+              v-model="reviewComment"
+              rows="4"
+              maxlength="1000"
+              placeholder="Share what you liked, delivery experience, quality, or anything helpful for other customers."
+              :disabled="reviewSubmitting"
+            ></textarea>
+          </label>
+          <p v-if="reviewError" class="review-error">{{ reviewError }}</p>
+          <p v-if="reviewSuccess" class="review-success">{{ reviewSuccess }}</p>
+          <button class="btn-primary review-submit" type="submit" :disabled="reviewSubmitting">
+            {{ reviewSubmitting ? 'Submitting...' : existingReview ? 'Update feedback' : 'Submit feedback' }}
+          </button>
+        </form>
+
+        <div v-else class="review-gate">
+          <span v-if="auth.isAuthenticated">Buy this product to share your feedback.</span>
+          <span v-else>Log in after buying this product to write a review.</span>
+        </div>
+
+        <div v-if="productReviews.length" class="review-list">
+          <article v-for="review in productReviews" :key="review.id" class="review-item">
+            <div class="review-item-head">
+              <strong>{{ review.userName }}</strong>
+              <span>{{ review.rating }} ★</span>
+            </div>
+            <p v-if="review.comment">{{ review.comment }}</p>
+            <small>{{ formatReviewDate(review.createdAt) }}</small>
+          </article>
+        </div>
+        <p v-else class="review-empty">No feedback yet.</p>
+      </section>
     </div>
   </div>
 
@@ -180,6 +351,38 @@ async function toggleFav() {
     <p>Product not found.</p>
     <RouterLink to="/products" class="link">Continue shopping</RouterLink>
   </div>
+
+  <Teleport to="body">
+    <Transition name="auth-modal">
+      <div v-if="showAuthPrompt" class="auth-modal-backdrop" @click.self="closeAuthPrompt">
+        <section
+          class="auth-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="auth-modal-title"
+          aria-describedby="auth-modal-message"
+        >
+          <div class="auth-modal-icon" aria-hidden="true">!</div>
+          <h2 id="auth-modal-title">Login Required</h2>
+          <p id="auth-modal-message">
+            Please login or register before purchasing or adding products to your cart.
+          </p>
+          <div class="auth-modal-actions">
+            <button class="auth-modal-primary" type="button" @click="goToLogin">Login</button>
+            <button class="auth-modal-secondary" type="button" @click="goToRegister">Register</button>
+            <button class="auth-modal-cancel" type="button" @click="closeAuthPrompt">Cancel</button>
+          </div>
+        </section>
+      </div>
+    </Transition>
+
+    <Transition name="cart-toast">
+      <div v-if="toastMessage" class="cart-toast" :class="toastTone" role="status" aria-live="polite">
+        <span aria-hidden="true">{{ toastTone === 'success' ? '✓' : '!' }}</span>
+        {{ toastMessage }}
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -389,6 +592,141 @@ async function toggleFav() {
   gap: 16px;
 }
 
+.reviews-panel {
+  margin-top: 28px;
+  background: #fff;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius);
+  padding: 24px;
+}
+
+.reviews-head,
+.review-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.reviews-head h2 {
+  font-size: 22px;
+}
+
+.review-summary {
+  color: var(--mm-text-soft);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.review-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--mm-border);
+  border-radius: 8px;
+  background: var(--mm-bg-mute);
+}
+
+.review-form h3 {
+  color: var(--mm-text);
+  font-size: 16px;
+}
+
+.review-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--mm-text-soft);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.review-form select,
+.review-form textarea {
+  width: 100%;
+  border: 1px solid var(--mm-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--mm-text);
+  padding: 11px 12px;
+}
+
+.review-form textarea {
+  resize: vertical;
+}
+
+.review-error,
+.review-success,
+.review-gate,
+.review-empty {
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+  padding: 10px 12px;
+}
+
+.review-error {
+  background: #fff5f5;
+  border: 1px solid #ffd8d6;
+  color: var(--mm-accent-red);
+}
+
+.review-success {
+  background: #effcf6;
+  border: 1px solid #bdf0d4;
+  color: #13794c;
+}
+
+.review-gate,
+.review-empty {
+  margin-top: 16px;
+  background: var(--mm-primary-light);
+  border: 1px solid rgba(43, 190, 249, 0.22);
+  color: var(--mm-primary-dark);
+}
+
+.review-submit {
+  width: fit-content;
+  min-width: 170px;
+}
+
+.review-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.review-item {
+  border: 1px solid var(--mm-border);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.review-item-head strong {
+  color: var(--mm-text);
+}
+
+.review-item-head span {
+  background: var(--mm-sale);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 7px;
+}
+
+.review-item p {
+  color: var(--mm-text-soft);
+  margin-top: 8px;
+}
+
+.review-item small {
+  display: block;
+  color: var(--mm-text-mute);
+  margin-top: 8px;
+}
+
 .empty {
   background: #fff;
   border: 1px dashed var(--mm-border);
@@ -400,8 +738,189 @@ async function toggleFav() {
 }
 .empty .link { color: var(--mm-primary); font-weight: 600; display: inline-block; margin-top: 10px; }
 
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(6px);
+}
+
+.auth-modal {
+  width: min(100%, 430px);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.24);
+  padding: 30px;
+  text-align: center;
+}
+
+.auth-modal-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 16px;
+  border-radius: 18px;
+  background: var(--mm-primary-light);
+  color: var(--mm-primary-dark);
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.auth-modal h2 {
+  color: var(--mm-text);
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.auth-modal p {
+  color: var(--mm-text-soft);
+  font-size: 14.5px;
+  line-height: 1.55;
+  margin-bottom: 22px;
+}
+
+.auth-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.auth-modal-actions button {
+  height: 44px;
+  border-radius: 10px;
+  font-weight: 800;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.auth-modal-actions button:hover {
+  transform: translateY(-1px);
+}
+
+.auth-modal-primary {
+  background: var(--mm-primary);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(43, 190, 249, 0.25);
+}
+
+.auth-modal-primary:hover {
+  background: var(--mm-primary-dark);
+}
+
+.auth-modal-secondary {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: var(--mm-primary-dark);
+}
+
+.auth-modal-secondary:hover {
+  border-color: var(--mm-primary);
+  background: var(--mm-primary-light);
+}
+
+.auth-modal-cancel {
+  grid-column: 1 / -1;
+  background: #f8fafc;
+  color: var(--mm-text-soft);
+}
+
+.auth-modal-cancel:hover {
+  background: #eef2f7;
+}
+
+.cart-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1001;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 260px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #dbeafe;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+  color: var(--mm-text);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.cart-toast span {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #fff;
+  font-weight: 900;
+}
+
+.cart-toast.success span {
+  background: #10b981;
+}
+
+.cart-toast.error {
+  border-color: #fecaca;
+}
+
+.cart-toast.error span {
+  background: #ef4444;
+}
+
+.auth-modal-enter-active,
+.auth-modal-leave-active,
+.cart-toast-enter-active,
+.cart-toast-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.auth-modal-enter-from,
+.auth-modal-leave-to {
+  opacity: 0;
+}
+
+.auth-modal-enter-from .auth-modal,
+.auth-modal-leave-to .auth-modal {
+  transform: translateY(12px) scale(0.97);
+}
+
+.cart-toast-enter-from,
+.cart-toast-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
 @media (max-width: 900px) {
   .pdp-layout { grid-template-columns: 1fr; }
   .related-grid { grid-template-columns: repeat(2, 1fr); }
+  .reviews-head { align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 560px) {
+  .auth-modal {
+    padding: 24px;
+  }
+  .auth-modal-actions {
+    grid-template-columns: 1fr;
+  }
+  .auth-modal-cancel {
+    grid-column: auto;
+  }
+  .cart-toast {
+    right: 16px;
+    bottom: 16px;
+    min-width: 0;
+    width: calc(100vw - 32px);
+  }
 }
 </style>

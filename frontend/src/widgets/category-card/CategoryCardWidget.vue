@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { Category } from '@/data/types';
 
-defineProps<{ category: Category; active?: boolean }>();
+const props = defineProps<{ category: Category; active?: boolean }>();
+
+const logoClass = computed(() => `logo-${props.category.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`);
+const isAppleLogo = computed(() => props.category.icon === 'apple' || props.category.slug === 'iphone');
 </script>
 
 <template>
@@ -13,9 +17,8 @@ defineProps<{ category: Category; active?: boolean }>();
         color: category.textColor || '#1f2937',
       }"
     >
-      <!-- Special case: iPhone shows the Apple logo -->
       <svg
-        v-if="category.name === 'iPhone'"
+        v-if="isAppleLogo"
         width="38"
         height="42"
         viewBox="0 0 384 512"
@@ -24,7 +27,7 @@ defineProps<{ category: Category; active?: boolean }>();
       >
         <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
       </svg>
-      <span v-else class="mm-cat-icon" :class="{ compact: category.icon.length > 1 }">
+      <span v-else class="mm-cat-logo" :class="[logoClass, { compact: category.icon.length > 3 }]">
         {{ category.icon }}
       </span>
     </div>
@@ -60,29 +63,98 @@ defineProps<{ category: Category; active?: boolean }>();
   align-items: center;
   justify-content: center;
   border: 3px solid transparent;
-  transition: border 0.2s, transform 0.2s;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65), 0 10px 22px rgba(15, 23, 42, 0.06);
+  transition: border 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .mm-cat-card:hover .mm-cat-circle {
   transform: scale(1.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75), 0 14px 28px rgba(15, 23, 42, 0.1);
 }
 
-.mm-cat-icon {
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
+.mm-cat-logo {
+  max-width: 82px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.4px;
   line-height: 1;
+  text-align: center;
+  text-transform: none;
 }
 
-.mm-cat-icon.compact {
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
+.mm-cat-logo.compact {
+  font-size: 20px;
+}
+
+.logo-samsung {
+  font-size: 16px;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  transform: scaleX(1.15);
+}
+
+.logo-oppo {
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.logo-pixel {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background:
+    conic-gradient(from 35deg, #4285f4 0 25%, #34a853 0 50%, #fbbc05 0 75%, #ea4335 0 100%);
+  color: #fff;
+  font-size: 25px;
+  font-family: Arial, sans-serif;
+  box-shadow: 0 8px 18px rgba(26, 115, 232, 0.22);
+}
+
+.logo-realme {
+  min-width: 64px;
+  min-height: 34px;
+  border-radius: 6px;
+  background: #ffc915;
+  color: #111827;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  padding: 0 8px;
+}
+
+.logo-vivo {
+  font-size: 28px;
+  font-style: italic;
+  letter-spacing: 0.03em;
+}
+
+.logo-xiaomi,
+.logo-redmi {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #ff6900;
+  color: #fff;
+  font-size: 20px;
+}
+
+.logo-oneplus {
+  width: 46px;
+  height: 46px;
+  border: 3px solid currentColor;
+  border-radius: 8px;
+  font-size: 20px;
 }
 
 .mm-cat-label {
   font-size: 13.5px;
   color: var(--mm-text);
-  font-weight: 500;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 </style>

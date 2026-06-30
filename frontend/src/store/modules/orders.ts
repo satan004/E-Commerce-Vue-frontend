@@ -29,7 +29,7 @@ function adaptOrder(order: ordersApi.ApiOrder): Order {
   const items = order.items.map((it) => ({
     productId: String(it.product_id),
     name: it.product_name,
-    image: it.product?.image_url ?? '',
+    image: it.product?.image_url?.replace('http://localhost', '') ?? '',
     price: Number(it.unit_price),
     qty: it.quantity,
   }));

@@ -13,7 +13,7 @@ export const heroSlides = [
     id: 2,
     tag: 'New arrivals in smartphones',
     title: 'SMARTPHONES.',
-    subtitle: 'From ₹9,999',
+    subtitle: 'From $9,999',
     image:
       'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=900&q=80',
   },

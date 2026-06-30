@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { heroSlides } from '@/data/megamart';
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import { useCatalogStore } from '@/store/modules/catalog';
+import { formatPrice } from '@/utils/currency';
 
+const catalog = useCatalogStore();
 const current = ref(0);
 let timer: ReturnType<typeof setInterval> | null = null;
 
+const slides = computed(() => catalog.featured.slice(0, 3));
+
 function goTo(i: number) {
-  current.value = (i + heroSlides.length) % heroSlides.length;
+  if (slides.value.length === 0) return;
+  current.value = (i + slides.value.length) % slides.value.length;
 }
 
 function next() {
+  if (slides.value.length <= 1) return;
   goTo(current.value + 1);
 }
 
@@ -18,6 +24,7 @@ function prev() {
 }
 
 onMounted(() => {
+  if (catalog.featured.length === 0) catalog.loadFeatured(6);
   timer = setInterval(next, 5000);
 });
 
@@ -36,17 +43,24 @@ onBeforeUnmount(() => {
           </svg>
         </button>
 
-        <div class="mm-hero-track" :style="{ transform: `translateX(-${current * 100}%)` }">
-          <div v-for="slide in heroSlides" :key="slide.id" class="mm-hero-slide">
+        <div v-if="slides.length" class="mm-hero-track" :style="{ transform: `translateX(-${current * 100}%)` }">
+          <div v-for="slide in slides" :key="slide.id" class="mm-hero-slide">
             <div class="mm-hero-content">
-              <p class="mm-hero-tag">{{ slide.tag }}</p>
-              <h1 class="mm-hero-title">{{ slide.title }}</h1>
-              <p class="mm-hero-sub">{{ slide.subtitle }}</p>
-              <button class="mm-hero-cta">Shop Now</button>
+              <p class="mm-hero-tag">{{ slide.brand }}</p>
+              <h1 class="mm-hero-title">{{ slide.name }}</h1>
+              <p class="mm-hero-sub">{{ formatPrice(slide.price) }}</p>
+              <RouterLink :to="`/product/${slide.slug}`" class="mm-hero-cta">Shop Now</RouterLink>
             </div>
             <div class="mm-hero-image">
-              <img :src="slide.image" :alt="slide.title" />
+              <img :src="slide.image" :alt="slide.name" />
             </div>
+          </div>
+        </div>
+        <div v-else class="mm-hero-slide mm-hero-empty">
+          <div class="mm-hero-content">
+            <p class="mm-hero-tag">Loading</p>
+            <h1 class="mm-hero-title">Products</h1>
+            <p class="mm-hero-sub">Fetching catalog...</p>
           </div>
         </div>
 
@@ -58,7 +72,7 @@ onBeforeUnmount(() => {
 
         <div class="mm-hero-dots">
           <span
-            v-for="(slide, i) in heroSlides"
+            v-for="(slide, i) in slides"
             :key="i"
             class="mm-dot"
             :class="{ active: i === current }"
@@ -144,6 +158,7 @@ onBeforeUnmount(() => {
 }
 
 .mm-hero-cta {
+  display: inline-flex;
   background: var(--mm-primary);
   color: #fff;
   padding: 11px 26px;
@@ -155,6 +170,10 @@ onBeforeUnmount(() => {
 
 .mm-hero-cta:hover {
   background: var(--mm-primary-dark);
+}
+
+.mm-hero-empty {
+  width: 100%;
 }
 
 .mm-hero-image {

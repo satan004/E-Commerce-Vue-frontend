@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCartStore } from '@/store/modules/cart';
 import { useAuthStore } from '@/store/modules/auth';
+import { formatPrice } from '@/utils/currency';
 
 const cart = useCartStore();
 const auth = useAuthStore();
@@ -49,13 +50,13 @@ function continueShopping() {
               <p class="name">{{ it.product.name }}</p>
             </div>
           </RouterLink>
-          <span class="cell-price">₹{{ it.product.price.toLocaleString('en-IN') }}</span>
+          <span class="cell-price">{{ formatPrice(it.product.price) }}</span>
           <div class="qty">
             <button @click="cart.setQty(it.productId, it.qty - 1)" aria-label="Decrease">−</button>
             <span>{{ it.qty }}</span>
             <button @click="cart.setQty(it.productId, it.qty + 1)" aria-label="Increase">+</button>
           </div>
-          <span class="cell-subtotal">₹{{ (it.product.price * it.qty).toLocaleString('en-IN') }}</span>
+          <span class="cell-subtotal">{{ formatPrice(it.product.price * it.qty) }}</span>
           <button class="remove" aria-label="Remove" @click="cart.remove(it.productId)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6" />
@@ -72,12 +73,12 @@ function continueShopping() {
 
       <aside class="cart-summary">
         <h3>Order Summary</h3>
-        <div class="line"><span>Subtotal</span><span>₹{{ cart.subtotal.toLocaleString('en-IN') }}</span></div>
-        <div class="line"><span>Shipping</span><span>{{ cart.shipping === 0 ? 'FREE' : '₹' + cart.shipping.toLocaleString('en-IN') }}</span></div>
+        <div class="line"><span>Subtotal</span><span>{{ formatPrice(cart.subtotal) }}</span></div>
+        <div class="line"><span>Shipping</span><span>{{ cart.shipping === 0 ? 'FREE' : formatPrice(cart.shipping) }}</span></div>
         <div v-if="cart.subtotal < 499" class="hint">
-          Add ₹{{ (499 - cart.subtotal).toLocaleString('en-IN') }} more for free shipping.
+          Add {{ formatPrice(499 - cart.subtotal) }} more for free shipping.
         </div>
-        <div class="line total"><span>Total</span><span>₹{{ cart.total.toLocaleString('en-IN') }}</span></div>
+        <div class="line total"><span>Total</span><span>{{ formatPrice(cart.total) }}</span></div>
         <button class="checkout-btn" @click="checkout">Proceed to Checkout</button>
       </aside>
     </div>

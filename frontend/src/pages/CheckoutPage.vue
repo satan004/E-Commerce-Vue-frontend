@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { useCartStore } from '@/store/modules/cart';
 import { useAuthStore } from '@/store/modules/auth';
 import { useOrdersStore } from '@/store/modules/orders';
+import { formatPrice } from '@/utils/currency';
 
 const cart = useCartStore();
 const auth = useAuthStore();
@@ -12,6 +13,7 @@ const router = useRouter();
 
 const form = reactive({
   fullName: auth.user?.fullName ?? '',
+  email: auth.user?.email ?? '',
   phone: auth.user?.phone ?? '',
   line1: auth.user?.address?.line1 ?? '',
   city: auth.user?.address?.city ?? '',
@@ -22,8 +24,57 @@ const form = reactive({
 
 const error = ref('');
 const placing = ref(false);
+const submitted = ref(false);
+
+const touched = reactive({
+  fullName: false,
+  email: false,
+  phone: false,
+  line1: false,
+  city: false,
+  state: false,
+  pincode: false,
+});
 
 const items = computed(() => cart.detailed);
+
+type ShippingField = keyof typeof touched;
+
+function fieldError(field: ShippingField): string {
+  const value = String(form[field] ?? '').trim();
+
+  if (!value) return 'This field is required.';
+  if (field === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+    return 'Enter a valid email address.';
+  }
+
+  return '';
+}
+
+function showFieldState(field: ShippingField): boolean {
+  return submitted.value || touched[field];
+}
+
+function isInvalid(field: ShippingField): boolean {
+  return showFieldState(field) && !!fieldError(field);
+}
+
+function isValid(field: ShippingField): boolean {
+  return showFieldState(field) && !fieldError(field);
+}
+
+function markTouched(field: ShippingField) {
+  touched[field] = true;
+}
+
+function validateShipping(): boolean {
+  submitted.value = true;
+  (Object.keys(touched) as ShippingField[]).forEach((field) => {
+    touched[field] = true;
+  });
+
+  return (Object.keys(touched) as ShippingField[]).every((field) => !fieldError(field));
+}
 
 async function placeOrder() {
   if (!auth.isAuthenticated) {
@@ -34,8 +85,8 @@ async function placeOrder() {
     error.value = 'Your cart is empty.';
     return;
   }
-  if (!form.fullName || !form.phone || !form.line1 || !form.city || !form.state || !form.pincode) {
-    error.value = 'Please fill in all shipping fields.';
+  if (!validateShipping()) {
+    error.value = 'Please check the highlighted shipping fields.';
     return;
   }
 
@@ -66,6 +117,8 @@ async function placeOrder() {
     });
 
     await auth.updateProfile({
+      fullName: form.fullName,
+      email: form.email,
       phone: form.phone,
       address: {
         line1: form.line1,
@@ -95,35 +148,134 @@ async function placeOrder() {
 
     <div v-else class="checkout-layout">
       <section class="checkout-form">
-        <div class="form-card">
-          <h3>Shipping address</h3>
-          <div class="row two">
-            <label>
-              <span>Full name</span>
-              <input v-model="form.fullName" type="text" required />
-            </label>
-            <label>
-              <span>Phone</span>
-              <input v-model="form.phone" type="tel" required />
-            </label>
+        <div class="shipping-card">
+          <div class="shipping-head">
+            <div class="shipping-title-icon" aria-hidden="true">&#128205;</div>
+            <div>
+              <h2>Shipping Address</h2>
+              <p>Please enter your delivery information carefully.</p>
+            </div>
           </div>
-          <label>
-            <span>Address</span>
-            <input v-model="form.line1" type="text" placeholder="House no., street, area" required />
-          </label>
-          <div class="row three">
-            <label>
-              <span>City</span>
-              <input v-model="form.city" type="text" required />
-            </label>
-            <label>
-              <span>State</span>
-              <input v-model="form.state" type="text" required />
-            </label>
-            <label>
-              <span>Pincode</span>
-              <input v-model="form.pincode" type="text" required />
-            </label>
+
+          <div class="shipping-grid">
+            <div class="shipping-field">
+              <label for="checkout-full-name">&#128100; Full Name</label>
+              <div class="input-wrap" :class="{ invalid: isInvalid('fullName'), valid: isValid('fullName') }">
+                <span aria-hidden="true">&#128100;</span>
+                <input
+                  id="checkout-full-name"
+                  v-model="form.fullName"
+                  type="text"
+                  placeholder="John Smith"
+                  autocomplete="name"
+                  required
+                  @blur="markTouched('fullName')"
+                />
+              </div>
+              <small v-if="isInvalid('fullName')" class="field-error">{{ fieldError('fullName') }}</small>
+            </div>
+
+            <div class="shipping-field">
+              <label for="checkout-email">&#9993;&#65039; Email</label>
+              <div class="input-wrap" :class="{ invalid: isInvalid('email'), valid: isValid('email') }">
+                <span aria-hidden="true">&#9993;&#65039;</span>
+                <input
+                  id="checkout-email"
+                  v-model="form.email"
+                  type="email"
+                  placeholder="john@example.com"
+                  autocomplete="email"
+                  required
+                  @blur="markTouched('email')"
+                />
+              </div>
+              <small v-if="isInvalid('email')" class="field-error">{{ fieldError('email') }}</small>
+            </div>
+
+            <div class="shipping-field">
+              <label for="checkout-phone">&#128222; Phone</label>
+              <div class="input-wrap" :class="{ invalid: isInvalid('phone'), valid: isValid('phone') }">
+                <span aria-hidden="true">&#128222;</span>
+                <input
+                  id="checkout-phone"
+                  v-model="form.phone"
+                  type="tel"
+                  placeholder="+855 12 345 678"
+                  autocomplete="tel"
+                  required
+                  @blur="markTouched('phone')"
+                />
+              </div>
+              <small v-if="isInvalid('phone')" class="field-error">{{ fieldError('phone') }}</small>
+            </div>
+
+            <div class="shipping-field">
+              <label for="checkout-city">&#127961; City</label>
+              <div class="input-wrap" :class="{ invalid: isInvalid('city'), valid: isValid('city') }">
+                <span aria-hidden="true">&#127961;</span>
+                <input
+                  id="checkout-city"
+                  v-model="form.city"
+                  type="text"
+                  placeholder="Phnom Penh"
+                  autocomplete="address-level2"
+                  required
+                  @blur="markTouched('city')"
+                />
+              </div>
+              <small v-if="isInvalid('city')" class="field-error">{{ fieldError('city') }}</small>
+            </div>
+
+            <div class="shipping-field full">
+              <label for="checkout-address">&#128205; Address</label>
+              <div class="input-wrap" :class="{ invalid: isInvalid('line1'), valid: isValid('line1') }">
+                <span aria-hidden="true">&#128205;</span>
+                <input
+                  id="checkout-address"
+                  v-model="form.line1"
+                  type="text"
+                  placeholder="House No. 123, Street 310"
+                  autocomplete="street-address"
+                  required
+                  @blur="markTouched('line1')"
+                />
+              </div>
+              <small v-if="isInvalid('line1')" class="field-error">{{ fieldError('line1') }}</small>
+            </div>
+
+            <div class="shipping-field">
+              <label for="checkout-state">&#127758; State</label>
+              <div class="input-wrap" :class="{ invalid: isInvalid('state'), valid: isValid('state') }">
+                <span aria-hidden="true">&#127758;</span>
+                <input
+                  id="checkout-state"
+                  v-model="form.state"
+                  type="text"
+                  placeholder="Phnom Penh"
+                  autocomplete="address-level1"
+                  required
+                  @blur="markTouched('state')"
+                />
+              </div>
+              <small v-if="isInvalid('state')" class="field-error">{{ fieldError('state') }}</small>
+            </div>
+
+            <div class="shipping-field">
+              <label for="checkout-postal-code">&#128238; Postal Code</label>
+              <div class="input-wrap" :class="{ invalid: isInvalid('pincode'), valid: isValid('pincode') }">
+                <span aria-hidden="true">&#128238;</span>
+                <input
+                  id="checkout-postal-code"
+                  v-model="form.pincode"
+                  type="text"
+                  placeholder="120101"
+                  autocomplete="postal-code"
+                  required
+                  @blur="markTouched('pincode')"
+                />
+              </div>
+              <small v-if="isInvalid('pincode')" class="field-error">{{ fieldError('pincode') }}</small>
+            </div>
           </div>
         </div>
 
@@ -164,18 +316,18 @@ async function placeOrder() {
               <p class="si-name">{{ it.product.name }}</p>
               <p class="si-meta">Qty: {{ it.qty }}</p>
             </div>
-            <span class="si-price">₹{{ (it.product.price * it.qty).toLocaleString('en-IN') }}</span>
+            <span class="si-price">{{ formatPrice(it.product.price * it.qty) }}</span>
           </div>
         </div>
 
-        <div class="line"><span>Subtotal</span><span>₹{{ cart.subtotal.toLocaleString('en-IN') }}</span></div>
-        <div class="line"><span>Shipping</span><span>{{ cart.shipping === 0 ? 'FREE' : '₹' + cart.shipping.toLocaleString('en-IN') }}</span></div>
-        <div class="line total"><span>Total</span><span>₹{{ cart.total.toLocaleString('en-IN') }}</span></div>
+        <div class="line"><span>Subtotal</span><span>{{ formatPrice(cart.subtotal) }}</span></div>
+        <div class="line"><span>Shipping</span><span>{{ cart.shipping === 0 ? 'FREE' : formatPrice(cart.shipping) }}</span></div>
+        <div class="line total"><span>Total</span><span>{{ formatPrice(cart.total) }}</span></div>
 
         <p v-if="error" class="auth-error">{{ error }}</p>
 
         <button class="place-btn" :disabled="placing" @click="placeOrder">
-          {{ placing ? 'Placing order…' : `Place Order • ₹${cart.total.toLocaleString('en-IN')}` }}
+          {{ placing ? 'Placing order...' : `Place Order - ${formatPrice(cart.total)}` }}
         </button>
       </aside>
     </div>
@@ -232,6 +384,136 @@ form input {
   font-size: 14px;
 }
 form input:focus { outline: none; border-color: var(--mm-primary); background: #fff; }
+
+.shipping-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+  padding: 32px;
+  margin-bottom: 18px;
+}
+
+.shipping-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 26px;
+}
+
+.shipping-title-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  background: var(--mm-primary-light);
+  color: #2563eb;
+  font-size: 22px;
+}
+
+.shipping-head h2 {
+  color: #111827;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.shipping-head p {
+  color: #6b7280;
+  font-size: 15px;
+  margin-top: 6px;
+}
+
+.shipping-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.shipping-field {
+  min-width: 0;
+}
+
+.shipping-field.full {
+  grid-column: 1 / -1;
+}
+
+.shipping-field label {
+  display: block;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.input-wrap > span {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  font-size: 16px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.input-wrap input {
+  width: 100%;
+  height: 50px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  color: #111827;
+  font-size: 15px;
+  padding: 0 16px 0 48px;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+}
+
+.input-wrap input::placeholder {
+  color: #9ca3af;
+}
+
+.input-wrap:hover input {
+  border-color: #93c5fd;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.06);
+}
+
+.input-wrap input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+}
+
+.input-wrap.valid input {
+  border-color: #10b981;
+}
+
+.input-wrap.valid input:focus {
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.14);
+}
+
+.input-wrap.invalid input {
+  border-color: #ef4444;
+  background: #fffbfb;
+}
+
+.input-wrap.invalid input:focus {
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.14);
+}
+
+.field-error {
+  display: block;
+  color: #dc2626;
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-top: 7px;
+}
 
 .row.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .row.three { display: grid; grid-template-columns: 2fr 1.5fr 1fr; gap: 12px; }
@@ -328,6 +610,28 @@ form input:focus { outline: none; border-color: var(--mm-primary); background: #
 
 @media (max-width: 900px) {
   .checkout-layout { grid-template-columns: 1fr; }
-  .row.two, .row.three { grid-template-columns: 1fr; }
+  .shipping-card { padding: 24px; }
+  .shipping-grid, .row.two, .row.three { grid-template-columns: 1fr; }
+  .shipping-head h2 { font-size: 24px; }
+}
+
+@media (max-width: 560px) {
+  .page-pad { padding: 18px 14px 42px; }
+  .shipping-card {
+    padding: 20px;
+    border-radius: 14px;
+  }
+  .shipping-head {
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .shipping-title-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  .shipping-head h2 { font-size: 22px; }
+  .shipping-head p { font-size: 14px; }
 }
 </style>
+

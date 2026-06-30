@@ -25,6 +25,21 @@ export interface ApiProduct {
   category?: ApiCategory | null;
   reviews_avg_rating?: string | null;
   reviews_count?: number;
+  reviews?: ApiReview[];
+}
+
+export interface ApiReview {
+  id: number;
+  user_id: number;
+  product_id: number;
+  rating: number;
+  comment?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  user?: {
+    id: number;
+    name: string;
+  } | null;
 }
 
 interface PaginatedProducts {
@@ -59,4 +74,15 @@ export async function fetchProducts(query: ProductQuery = {}): Promise<Paginated
 
 export async function fetchProduct(idOrSlug: number | string): Promise<ApiProduct> {
   return api<ApiProduct>({ method: 'GET', url: `/products/${idOrSlug}` });
+}
+
+export async function submitProductReview(
+  productId: number | string,
+  payload: { rating: number; comment?: string },
+): Promise<ApiProduct> {
+  return api<ApiProduct>({
+    method: 'POST',
+    url: `/products/${productId}/reviews`,
+    data: payload,
+  });
 }

@@ -1,6 +1,8 @@
 // filepath: src/services/auth.ts
 import { api, setAuthToken } from './apiClient';
 
+const backendURL = ((import.meta.env.VITE_BACKEND_URL as string | undefined) ?? '').replace(/\/$/, '');
+
 export interface AuthUser {
   id: number;
   name: string;
@@ -8,6 +10,9 @@ export interface AuthUser {
   phone?: string | null;
   address?: string | null;
   is_admin?: boolean;
+  google_id?: string | null;
+  avatar_path?: string | null;
+  avatar_url?: string | null;
   email_verified_at?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -62,6 +67,26 @@ export async function updateProfile(payload: {
   email: string;
   phone?: string;
   address?: string;
+  avatar?: File | null;
+  remove_avatar?: boolean;
 }): Promise<AuthUser> {
+  if (payload.avatar || payload.remove_avatar) {
+    const formData = new FormData();
+    formData.append('_method', 'PUT');
+    formData.append('name', payload.name);
+    formData.append('email', payload.email);
+    formData.append('phone', payload.phone ?? '');
+    formData.append('address', payload.address ?? '');
+    if (payload.avatar) formData.append('avatar', payload.avatar);
+    if (payload.remove_avatar) formData.append('remove_avatar', '1');
+
+    return api<AuthUser>({ method: 'POST', url: '/profile', data: formData });
+  }
+
   return api<AuthUser>({ method: 'PUT', url: '/profile', data: payload });
+}
+
+export function googleRedirectUrl(): string {
+  const path = '/auth/google/redirect';
+  return backendURL ? `${backendURL}${path}` : path;
 }

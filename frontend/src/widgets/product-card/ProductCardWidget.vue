@@ -182,4 +182,23 @@ async function toggleFav(e: Event) {
   color: var(--mm-sale);
   font-weight: 600;
 }
+
+@media (max-width: 640px) {
+  .mm-pc-body { padding: 10px 10px 12px; }
+  .mm-pc-fav { top: 6px; left: 6px; width: 28px; height: 28px; }
+  .mm-pc-badge { top: 6px; right: 6px; font-size: 10px; padding: 3px 7px; }
+  .mm-pc-name { font-size: 12.5px; min-height: 34px; -webkit-line-clamp: 2; }
+  .mm-pc-brand { font-size: 10px; }
+  .mm-pc-price { font-size: 14px; }
+  .mm-pc-old { font-size: 11.5px; }
+  .mm-pc-save { font-size: 11.5px; }
+  .mm-pc-rating-box { font-size: 10px; padding: 1px 5px; }
+  .mm-pc-rating-count { font-size: 11px; }
+}
+
+@media (max-width: 380px) {
+  .mm-pc-body { padding: 8px 8px 10px; }
+  .mm-pc-name { font-size: 11.5px; min-height: 30px; }
+  .mm-pc-price { font-size: 13px; }
+}
 </style>

@@ -157,4 +157,33 @@ const isAppleLogo = computed(() => props.category.icon === 'apple' || props.cate
   font-weight: 800;
   text-transform: uppercase;
 }
+
+@media (max-width: 1024px) {
+  .mm-cat-circle { width: 80px; height: 80px; }
+  .mm-cat-logo { max-width: 68px; font-size: 24px; }
+  .logo-pixel, .logo-xiaomi, .logo-redmi, .logo-oneplus { width: 38px; height: 38px; font-size: 18px; }
+  .mm-cat-label { font-size: 12px; }
+}
+
+@media (max-width: 640px) {
+  .mm-cat-card { padding: 6px 2px; gap: 6px; }
+  .mm-cat-circle { width: 64px; height: 64px; }
+  .mm-cat-logo { max-width: 52px; font-size: 20px; }
+  .mm-cat-logo.compact { font-size: 16px; }
+  .logo-samsung { font-size: 12px; }
+  .logo-oppo { font-size: 16px; }
+  .logo-pixel, .logo-xiaomi, .logo-redmi, .logo-oneplus { width: 30px; height: 30px; font-size: 14px; border-radius: 8px; }
+  .logo-oneplus { border-width: 2px; }
+  .logo-realme { min-width: 48px; min-height: 26px; font-size: 13px; }
+  .logo-vivo { font-size: 22px; }
+  .mm-cat-label { font-size: 11px; line-height: 1.2; }
+}
+
+@media (max-width: 380px) {
+  .mm-cat-circle { width: 56px; height: 56px; }
+  .mm-cat-logo { max-width: 46px; font-size: 18px; }
+  .mm-cat-logo.compact { font-size: 14px; }
+  .logo-pixel, .logo-xiaomi, .logo-redmi, .logo-oneplus { width: 26px; height: 26px; font-size: 12px; }
+  .mm-cat-label { font-size: 10px; }
+}
 </style>

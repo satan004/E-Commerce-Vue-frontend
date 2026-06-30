@@ -261,11 +261,38 @@ h1 { font-size: 24px; font-weight: 700; margin-bottom: 18px; }
 
 @media (max-width: 900px) {
   .cart-layout { grid-template-columns: 1fr; }
+  .cart-summary { position: static; }
   .cart-head { display: none; }
   .cart-row {
     grid-template-columns: 1fr 1fr;
     gap: 10px;
   }
   .cart-prod { grid-column: 1 / -1; }
+}
+
+@media (max-width: 640px) {
+  .page-pad { padding: 18px 14px 42px; }
+  h1 { font-size: 21px; margin-bottom: 14px; }
+  .cart-items { padding: 8px; }
+  .cart-row { padding: 10px; font-size: 13px; }
+  .cart-prod img { width: 56px; height: 56px; }
+  .cart-prod-info .name { font-size: 12.5px; }
+  .cell-price, .cell-subtotal { font-size: 13px; }
+  .cart-summary { padding: 16px; }
+  .cart-summary h3 { font-size: 15px; }
+  .line { font-size: 12.5px; }
+  .line.total { font-size: 15px; }
+  .checkout-btn { padding: 11px; font-size: 13px; }
+}
+
+@media (max-width: 420px) {
+  .cart-row {
+    grid-template-columns: 1fr;
+    text-align: left;
+  }
+  .cell-price::before { content: "Price: "; color: var(--mm-text-mute); font-weight: 500; }
+  .cell-subtotal::before { content: "Subtotal: "; color: var(--mm-text-mute); font-weight: 500; }
+  .qty { justify-self: flex-start; }
+  .remove { justify-self: flex-end; }
 }
 </style>

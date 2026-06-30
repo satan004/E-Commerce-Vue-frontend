@@ -112,13 +112,22 @@ const latestProducts = computed(() => catalog.products);
 
   .mm-products-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 10px;
   }
 
   .mm-categories-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
   }
 
+}
+
+@media (max-width: 380px) {
+  .mm-products-grid {
+    gap: 8px;
+  }
+  .mm-categories-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 </style>

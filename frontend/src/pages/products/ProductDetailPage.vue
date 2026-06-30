@@ -901,9 +901,39 @@ function formatReviewDate(value?: string): string {
 }
 
 @media (max-width: 900px) {
-  .pdp-layout { grid-template-columns: 1fr; }
-  .related-grid { grid-template-columns: repeat(2, 1fr); }
+  .pdp-layout { grid-template-columns: 1fr; padding: 18px; gap: 22px; }
+  .related-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .reviews-head { align-items: flex-start; flex-direction: column; }
+  .related { padding: 28px 0 0; }
+  .related h2 { font-size: 19px; }
+  .reviews-panel { padding: 20px; }
+  .review-form { padding: 14px; }
+}
+
+@media (max-width: 640px) {
+  .pdp { padding: 16px 0 30px; }
+  .pdp-layout { padding: 14px; border-radius: 10px; }
+  .pdp-title { font-size: 20px; }
+  .pdp-price { font-size: 24px; }
+  .pdp-old { font-size: 14px; }
+  .pdp-main-img { border-radius: 10px; }
+  .pdp-thumbs button { width: 52px; height: 52px; padding: 4px; }
+  .pdp-thumbs { gap: 6px; }
+  .pdp-fav { top: 10px; right: 10px; width: 34px; height: 34px; }
+  .pdp-actions { flex-direction: row; }
+  .btn-primary, .btn-accent { padding: 11px 14px; font-size: 13px; }
+  .breadcrumbs { font-size: 11.5px; flex-wrap: wrap; }
+  .pdp-specs th, .pdp-specs td { padding: 6px 8px; font-size: 12px; }
+  .qty-stepper button { width: 32px; height: 32px; font-size: 14px; }
+  .qty-stepper span { min-width: 36px; }
+  .review-submit { width: 100%; min-width: 0; }
+}
+
+@media (max-width: 380px) {
+  .pdp-actions { flex-direction: column; }
+  .pdp-title { font-size: 18px; }
+  .pdp-price { font-size: 22px; }
+  .related-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
 }
 
 @media (max-width: 560px) {

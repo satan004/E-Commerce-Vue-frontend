@@ -242,21 +242,48 @@ onBeforeUnmount(() => {
   transform: scale(1.2);
 }
 
+@media (max-width: 1024px) {
+  .mm-hero-slide {
+    padding: 28px 40px;
+    min-height: 260px;
+  }
+  .mm-hero-title { font-size: 36px; }
+}
+
 @media (max-width: 768px) {
+  .mm-hero {
+    padding: 16px 0 10px;
+  }
   .mm-hero-slide {
     grid-template-columns: 1fr;
-    padding: 24px;
+    padding: 24px 20px 28px;
     text-align: center;
-    min-height: 360px;
+    min-height: auto;
   }
   .mm-hero-title {
-    font-size: 30px;
+    font-size: 26px;
   }
+  .mm-hero-tag { font-size: 13px; margin-bottom: 10px; }
+  .mm-hero-sub { font-size: 16px; margin-bottom: 16px; }
+  .mm-hero-cta { padding: 10px 22px; font-size: 13px; }
   .mm-hero-image {
-    margin-top: 14px;
+    margin-top: 12px;
   }
   .mm-hero-image img {
-    max-height: 160px;
+    max-height: 150px;
   }
+  .mm-hero-arrow {
+    width: 32px;
+    height: 32px;
+  }
+  .mm-hero-arrow-left { left: 8px; }
+  .mm-hero-arrow-right { right: 8px; }
+  .mm-hero-dots { bottom: 10px; }
+}
+
+@media (max-width: 420px) {
+  .mm-hero-slide { padding: 20px 16px 24px; }
+  .mm-hero-title { font-size: 22px; }
+  .mm-hero-image img { max-height: 130px; }
 }
 </style>

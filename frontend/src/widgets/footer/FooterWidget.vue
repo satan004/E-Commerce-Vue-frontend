@@ -8,15 +8,11 @@ const year = new Date().getFullYear();
       <div class="mm-footer-col mm-footer-brand">
         <a href="/" class="mm-logo">
           <span class="mm-logo-icon" aria-hidden="true">
-            <svg width="22" height="18" viewBox="0 0 22 18" fill="none">
-              <rect y="2" width="22" height="3" rx="1.5" fill="#2bbef9" />
-              <rect y="8" width="22" height="3" rx="1.5" fill="#2bbef9" />
-              <rect y="14" width="22" height="3" rx="1.5" fill="#2bbef9" />
-            </svg>
+            <img src="../../assets/icons/Icon web.png" width="30" height="30" alt="PHONE SHOP" />
           </span>
-          <span class="mm-logo-text">MegaMart</span>
+          <span class="mm-logo-text">PHONE SHOP</span>
         </a>
-        <p>Your one-stop shop for groceries, electronics, fashion, and more.</p>
+        <p>Your one-stop shop for phones, accessories, and everyday essentials.</p>
         <div class="mm-socials">
           <a href="#" aria-label="Facebook">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H8v-3h2.5V9.4c0-2.5 1.5-3.9 3.7-3.9 1 0 2.1.2 2.1.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.5V12h2.7l-.4 3h-2.3v7A10 10 0 0 0 22 12z"/></svg>
@@ -57,7 +53,7 @@ const year = new Date().getFullYear();
       </div>
     </div>
     <div class="mm-footer-bottom container">
-      <span>© {{ year }} MegaMart. All rights reserved.</span>
+      <span>© {{ year }} PHONE SHOP. All rights reserved.</span>
       <span class="mm-footer-links">
         <a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Cookies</a>
       </span>

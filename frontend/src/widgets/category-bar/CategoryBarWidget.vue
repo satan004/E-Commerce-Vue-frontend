@@ -40,6 +40,7 @@ onMounted(() => {
   height: 46px;
   overflow-x: auto;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .mm-category-inner::-webkit-scrollbar {
@@ -61,6 +62,12 @@ onMounted(() => {
 .mm-category-item:hover {
   background: var(--mm-primary-light);
   color: var(--mm-primary);
+}
+
+@media (max-width: 640px) {
+  .mm-category-bar { top: 58px; }
+  .mm-category-inner { height: 42px; padding-bottom: 4px; }
+  .mm-category-item { font-size: 12.5px; padding: 6px 12px; }
 }
 
 </style>

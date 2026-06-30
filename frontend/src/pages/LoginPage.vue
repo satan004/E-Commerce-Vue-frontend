@@ -145,7 +145,10 @@ function continueWithGoogle() {
   <div class="auth-page">
     <section class="auth-shell" aria-label="Customer login">
       <div class="auth-copy">
-        <p class="eyebrow">PHONE SHOP account</p>
+        <div class="eyebrow brand-eyebrow">
+          <img src="../../assets/icons/Icon web.png" alt="PHONE SHOP" class="eyebrow-logo" width="28" height="28" />
+          <span class="eyebrow-text">PHONE SHOP</span>
+        </div>
         <h1>Sign in to shop faster.</h1>
         <p>
           Track orders, save favorites, and keep your cart ready across every device.
@@ -290,6 +293,14 @@ function continueWithGoogle() {
   margin-bottom: 8px;
   text-transform: uppercase;
 }
+
+.brand-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.eyebrow-logo { display: inline-block; border-radius: 6px; }
+.eyebrow-text { display: inline-block; }
 
 .auth-copy h1 {
   color: var(--mm-text);

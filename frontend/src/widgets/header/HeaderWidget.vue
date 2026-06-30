@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCartStore } from '@/store/modules/cart';
 import { useWishlistStore } from '@/store/modules/wishlist';
@@ -11,6 +11,20 @@ const wishlist = useWishlistStore();
 const auth = useAuthStore();
 
 const searchQuery = ref('');
+const isCompact = ref(false);
+
+function updateCompact() {
+  isCompact.value = window.innerWidth <= 480;
+}
+
+onMounted(() => {
+  updateCompact();
+  window.addEventListener('resize', updateCompact);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateCompact);
+});
 
 function submitSearch() {
   const q = searchQuery.value.trim();
@@ -30,18 +44,22 @@ function submitSearch() {
 
       <form class="mm-search" @submit.prevent="submitSearch">
         <span class="mm-search-icon" aria-hidden="true">
-          <svg width="16" height="16" viewBox="0 0 0 0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5b6472" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
         </span>
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search essentials, groceries and more..."
+          :placeholder="isCompact ? 'Search phones...' : 'Search essentials, groceries and more...'"
+          class="mm-search-input"
         />
         <button type="button" class="mm-search-btn" aria-label="Open categories">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5b6472" stroke-width="2" stroke-linecap="round">
-            <circle cx="11" cy="11" r="7" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
       </form>
@@ -189,8 +207,29 @@ function submitSearch() {
   line-height: 1;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+  .mm-header-inner { gap: 16px; }
   .mm-action-text { display: none; }
   .mm-search { max-width: none; }
+}
+
+@media (max-width: 640px) {
+  .mm-header-inner { height: 58px; gap: 10px; }
+  .mm-logo-text { font-size: 16px; }
+  .mm-logo-icon img { width: 32px; height: 32px; }
+  .mm-search {
+    height: 38px;
+    padding: 0 10px;
+    gap: 6px;
+    min-width: 0;
+  }
+  .mm-search input { font-size: 13px; }
+  .mm-search input::placeholder { font-size: 12px; }
+  .mm-search-btn { display: none; }
+  .mm-actions { gap: 14px; }
+  .mm-badge { min-width: 16px; height: 16px; font-size: 9px; }
+  .mm-search input.mm-search-input::placeholder {
+    text-overflow: ellipsis;
+  }
 }
 </style>
